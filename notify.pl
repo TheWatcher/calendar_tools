@@ -22,7 +22,9 @@ use lib qw(/var/www/webperl modules);
 use Webperl::ConfigMicro;
 use Webperl::Utils qw(path_join);
 use Webperl::Template;
+use Emailer;
 use Google::Calendar;
+use HTML::WikiConverter;
 use LWP::Authen::OAuth2;
 use Data::Dumper;
 
@@ -48,43 +50,116 @@ sub save_tokens {
 #  Event handling code
 
 
-# FIXME: needs to generate a html block
-# FIXME: make <a href="calendar link" target="_blank">summary</a>
-sub events_to_html {
-    my $events = shift;
+sub events_to_string {
+    my $events   = shift;
+    my $template = shift;
+    my $mode     = shift;
+    my $result   = "";
+    my $table    = "";
 
-    foreach my $day (sort keys(%{$events})) {
-        print $events -> {$day} -> {"name"}."\n".("-" x length($events -> {$day} -> {"name"}))."\n";
+    foreach my $day (sort keys(%{$events -> {"days"}})) {
+        my $dayevents = "";
 
-        foreach my $event (@{$events -> {$day} -> {"events"}}) {
-            print $event -> {"summary"}."\n";
-            print "\t".$event -> {"timestring"}."\n";
-            print "\tLocation: ".$event -> {"location"}."\n" if($event -> {"location"});
-            print "\n";
+        foreach my $event (@{$events -> {"days"} -> {$day} -> {"events"}}) {
+            $dayevents .= $template -> load_template("$mode/event.tem", {"***summary***"  => $event -> {"summary"},
+                                                                         "***url***"      => $event -> {"htmlLink"},
+                                                                         "***time***"     => $event -> {"timestring"},
+                                                                         "***location***" => $event -> {"location"} });
         }
+
+        $result .= $template -> load_template("$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
+                                                                "***id***"     => $day,
+                                                                "***events***" => $dayevents});
+
+        $table .= $template -> load_template("$mode/table-day.tem", {"***id***"  => $day,
+                                                                     "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
     }
+
+    $table = $template -> load_template("$mode/table.tem", {"***days***" => $table});
+
+    return $template -> load_template("$mode/email.tem", {"***days***"  => $result,
+                                                          "***table***" => $table,
+                                                          "***start***" => $events -> {"start"},
+                                                          "***end***"   => $events -> {"end"}});
 }
 
 
 # =============================================================================
 #  Email related
 
+## @method $ html_to_markdown($html)
+# Convert the specified html into markdown text.
+#
+# @param html The HTML to convert to markdown.
+# @return The markdown version of the text.
+sub html_to_markdown {
+    my $html      = shift;
+    my $entitymap = { '&ndash;'  => '-',
+                      '&mdash;'  => '-',
+                      '&rsquo;'  => "'",
+                      '&lsquo;'  => "'",
+                      '&ldquo;'  => '"',
+                      '&rdquo;'  => '"',
+                      '&hellip;' => '...',
+                      '&gt;'     => '>',
+                      '&lt;'     => '<',
+                      '&amp;'    => '&',
+                      '&nbsp;'   => ' ',
+    };
+
+    # Handle html entities that are going to break...
+    foreach my $entity (keys(%{$entitymap})) {
+        $html =~ s/$entity/$entitymap->{$entity}/g;
+    }
+
+    my $converter = new HTML::WikiConverter(dialect => 'Markdown',
+                                            link_style => 'inline',
+                                            image_tag_fallback => 0);
+    my $body = $converter -> html2wiki($html);
+
+    # Clean up html the converter misses consistently
+    $body =~ s|<br\s*/>|\n|g;
+    $body =~ s|&gt;|>|g;
+
+    return $body
+}
+
+
+sub make_email_subject {
+    my $events   = shift;
+    my $template = shift;
+
+    return $template -> load_template("subject.tem", {"***start***" => $events -> {"start"},
+                                                      "***end***"   => $events -> {"end"}});
+}
+
+
 sub generate_email {
     my $events   = shift;
+    my $template = shift;
+    my $emailer  = shift;
     my $settings = shift;
 
     my $header = [ "To"       => $settings -> {"email"} -> {"to"},
                    "From"     => $settings -> {"email"} -> {"from"},
-                   "Subject"  => make_email_subject($events),
+                   "Subject"  => Encode::encode("iso-8859-1", make_email_subject($events, $template)),
                    "Reply-To" => $settings -> {"email"} -> {"replyto"},
                  ];
 
-    my $htmlbody = events_to_html($events);
+    my $htmlbody = Encode::encode("iso-8859-1", events_to_string($events, $template, 'html'));
+    my $textbody = Encode::encode("iso-8859-1", events_to_string($events, $template, 'text'));
 
+    $emailer -> send_email({ header => $header,
+                             html_body => $htmlbody,
+                             text_body => $textbody})
+        or die "Email failed: ".$emailer -> errstr();
+}
 
 
 $config = Webperl::ConfigMicro -> new(path_join($scriptpath, "config", "config.cfg"), quote_values => '')
     or die "Unable to load configuration: ".$Webperl::SystemModule::errstr;
+
+$config -> {"config"} -> {"base"} = $scriptpath;
 
 my $agent = LWP::Authen::OAuth2->new(client_id        => $config -> {"google"} -> {"client_id"},
                                      client_secret    => $config -> {"google"} -> {"client_secret"},
@@ -105,7 +180,12 @@ my $calendar = Google::Calendar -> new(agent    => $agent,
                                        settings => $config)
     or die "Unable to create calendar object\n";
 
-my $day_events = $calendar -> request_events_as_days($config -> {"notify"} -> {"days"}, $config -> {"notify"} -> {"from"});
-generate_days($day_events);
+my $template = Webperl::Template -> new(settings => $config)
+    or die "Unable to create template object\n";
 
-# FIXME: send html email here
+my $emailer = Emailer -> new(host => $config -> {"email"} -> {"host"},
+                             port => $config -> {"email"} -> {"port"})
+    or die "Unable to create emailer object\n";
+
+my $day_events = $calendar -> request_events_as_days($config -> {"notify"} -> {"days"}, $config -> {"notify"} -> {"from"});
+generate_email($day_events, $template, $emailer, $config);

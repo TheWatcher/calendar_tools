@@ -75,7 +75,8 @@ sub new {
 #             day of the week is used. eg: if set to 'Fri' and the current
 #             day is Monday, the previous Friday is used. This defaults to
 #             1 (ie: from tomorrow);
-# @return A reference to an array of events on success, undef on error.
+# @return A reference to a hash containing the events, start and end edate on
+#         success, undef on error.
 sub request_events {
     my $self = shift;
     my $days = shift;
@@ -99,7 +100,9 @@ sub request_events {
         unless($result -> is_success);
 
     my $decoded = decode_json($result -> content());
-    return $decoded -> {"items"}
+    return { events => $decoded -> {"items"},
+             start  => $startdate -> strftime($self -> {"formats"} -> {"day"}),
+             end    => $enddate -> strftime($self -> {"formats"} -> {"day"}) };
 }
 
 
@@ -113,14 +116,17 @@ sub request_events_as_days {
     my $self   = shift;
     my $days   = shift;
     my $from   = shift;
-    my $result = {};
 
     $self -> clear_error();
 
     my $events = $self -> request_events($days, $from)
         or return undef;
 
-    foreach my $event (@{$events}) {
+    my $result = { start => $events -> {"start"},
+                   end   => $events -> {"end"}
+    };
+
+    foreach my $event (@{$events -> {"events"}}) {
         # Determine which day this event belongs on
         my $date = $self -> _start_to_date($event -> {"start"});
         if(!$date) {
@@ -135,11 +141,15 @@ sub request_events_as_days {
         $event -> {"timestring"} = $self -> _make_time_string($event -> {"start"}, $event -> {"end"}, $daydate);
 
         # Store the event
-        push(@{$result -> {$date} -> {"events"}}, $event);
+        push(@{$result -> {"days"} -> {$date} -> {"events"}}, $event);
 
         # Build a day name if not already done
-        $result -> {$date} -> {"name"} = $daydate -> strftime($self -> {"formats"} -> {"longday"})
-            if(!$result -> {$date} -> {"name"});
+        $result -> {"days"} -> {$date} -> {"name"} -> {"long"} = $daydate -> strftime($self -> {"formats"} -> {"longday"})
+            if(!$result -> {"days"} -> {$date} -> {"name"} -> {"long"});
+
+        $result -> {"days"} -> {$date} -> {"name"} -> {"short"} = $daydate -> strftime($self -> {"formats"} -> {"day"})
+            if(!$result -> {"days"} -> {$date} -> {"name"} -> {"short"});
+
     }
 
     return $result;
