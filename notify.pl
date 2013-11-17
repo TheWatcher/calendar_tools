@@ -18,13 +18,13 @@ BEGIN {
     }
 }
 
-use lib qw(/var/www/webperl);
+use lib qw(/var/www/webperl modules);
 use Webperl::ConfigMicro;
 use Webperl::Utils qw(path_join);
+use Webperl::Template;
 use Google::Calendar;
 use LWP::Authen::OAuth2;
 use Data::Dumper;
-
 
 # =============================================================================
 #  Google interaction code
@@ -50,13 +50,13 @@ sub save_tokens {
 
 # FIXME: needs to generate a html block
 # FIXME: make <a href="calendar link" target="_blank">summary</a>
-sub generate_days {
-    my $days = shift;
+sub events_to_html {
+    my $events = shift;
 
-    foreach my $day (sort keys(%{$days})) {
-        print $days -> {$day} -> {"name"}."\n".("-" x length($days -> {$day} -> {"name"}))."\n";
+    foreach my $day (sort keys(%{$events})) {
+        print $events -> {$day} -> {"name"}."\n".("-" x length($events -> {$day} -> {"name"}))."\n";
 
-        foreach my $event (@{$days -> {$day} -> {"events"}}) {
+        foreach my $event (@{$events -> {$day} -> {"events"}}) {
             print $event -> {"summary"}."\n";
             print "\t".$event -> {"timestring"}."\n";
             print "\tLocation: ".$event -> {"location"}."\n" if($event -> {"location"});
@@ -64,6 +64,23 @@ sub generate_days {
         }
     }
 }
+
+
+# =============================================================================
+#  Email related
+
+sub generate_email {
+    my $events   = shift;
+    my $settings = shift;
+
+    my $header = [ "To"       => $settings -> {"email"} -> {"to"},
+                   "From"     => $settings -> {"email"} -> {"from"},
+                   "Subject"  => make_email_subject($events),
+                   "Reply-To" => $settings -> {"email"} -> {"replyto"},
+                 ];
+
+    my $htmlbody = events_to_html($events);
+
 
 
 $config = Webperl::ConfigMicro -> new(path_join($scriptpath, "config", "config.cfg"), quote_values => '')
