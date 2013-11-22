@@ -272,6 +272,14 @@ sub _make_time_string {
     my $startdate = $self -> _parse_datestring($start -> {"date"} || $start -> {"dateTime"});
     my $enddate   = $self -> _parse_datestring($end   -> {"date"} || $end   -> {"dateTime"});
 
+    # If there's a start date with no datetime, and and end date with no datetime, and tne end is one day after the start,
+    # it's actually an all day event
+    if($start -> {"date"} && !$start -> {"dateTime"} && $end -> {"date"} && !$end -> {"dateTime"}) {
+        my $nextday = $startdate -> clone() -> add(days => 1);
+        return $self -> {"strings"} -> {"allday"}
+            if($enddate eq $nextday);
+    }
+
     given(DateTime -> compare($startdate, $enddate)) {
         when(0)  { return $self -> {"strings"} -> {"allday"}}
         when(1)  { return $self -> {"strings"} -> {"starting"}.$self -> _human_time($startdate, $current, $start -> {"date"}) }
