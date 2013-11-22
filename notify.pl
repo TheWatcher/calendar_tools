@@ -18,15 +18,17 @@ BEGIN {
     }
 }
 
-use lib qw(/var/www/webperl modules);
+use lib qw(/var/www/webperl);
 use Webperl::ConfigMicro;
 use Webperl::Utils qw(path_join);
 use Webperl::Template;
-use Emailer;
-use Google::Calendar;
 use HTML::WikiConverter;
 use LWP::Authen::OAuth2;
 use Data::Dumper;
+
+use lib path_join($scriptpath, "modules");
+use Emailer;
+use Google::Calendar;
 
 # =============================================================================
 #  Google interaction code
