@@ -22,6 +22,7 @@ use lib qw(/var/www/webperl);
 use Webperl::ConfigMicro;
 use Webperl::Utils qw(path_join);
 use Webperl::Template;
+use DateTime;
 use HTML::WikiConverter;
 use LWP::Authen::OAuth2;
 use Data::Dumper;
@@ -56,7 +57,8 @@ sub events_to_string {
     my $events   = shift;
     my $template = shift;
     my $mode     = shift;
-    my $result   = "";
+    my $ongoing  = "";
+    my $upcoming = "";
     my $table    = "";
 
     foreach my $day (sort keys(%{$events -> {"days"}})) {
@@ -69,20 +71,27 @@ sub events_to_string {
                                                                          "***location***" => $event -> {"location"} });
         }
 
-        $result .= $template -> load_template("$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
-                                                                "***id***"     => $day,
-                                                                "***events***" => $dayevents});
+        if(DateTime->compare($events -> {"days"} -> {$day} -> {"date"}, $events -> {"startdate"}) < 0) {
+            $ongoing .= $template -> load_template("$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
+                                                                     "***id***"     => $day,
+                                                                     "***events***" => $dayevents});
+        } else {
+            $upcoming .= $template -> load_template("$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
+                                                                      "***id***"     => $day,
+                                                                      "***events***" => $dayevents});
+        }
 
-        $table .= $template -> load_template("$mode/table-day.tem", {"***id***"  => $day,
-                                                                     "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
+        $table  .= $template -> load_template("$mode/table-day.tem", {"***id***"  => $day,
+                                                                      "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
     }
 
     $table = $template -> load_template("$mode/table.tem", {"***days***" => $table});
 
-    return $template -> load_template("$mode/email.tem", {"***days***"  => $result,
-                                                          "***table***" => $table,
-                                                          "***start***" => $events -> {"start"},
-                                                          "***end***"   => $events -> {"end"}});
+    return $template -> load_template("$mode/email.tem", {"***table***"    => $table,
+                                                          "***ongoing***"  => $ongoing,
+                                                          "***upcoming***" => $upcoming,
+                                                          "***start***"    => $events -> {"start"},
+                                                          "***end***"      => $events -> {"end"}});
 }
 
 
