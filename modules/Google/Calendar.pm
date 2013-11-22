@@ -100,9 +100,11 @@ sub request_events {
         unless($result -> is_success);
 
     my $decoded = decode_json($result -> content());
-    return { events => $decoded -> {"items"},
-             start  => $startdate -> strftime($self -> {"formats"} -> {"day"}),
-             end    => $enddate -> strftime($self -> {"formats"} -> {"day"}) };
+    return { events    => $decoded -> {"items"},
+             start     => $startdate -> strftime($self -> {"formats"} -> {"day"}),
+             startdate => $startdate,
+             end       => $enddate -> strftime($self -> {"formats"} -> {"day"}),
+             enddate   => $enddate};
 }
 
 
@@ -111,6 +113,13 @@ sub request_events {
 # result to a hash of date-keyed days, with each value being the list of
 # events on that day.
 #
+# @param days The number of days of events to fetch.
+# @param from The date to start fetching events from. This can either be a
+#             ISO8601 datestamp, an offset in days from the current day,
+#             or a day of the week. If the latter is used, the /nearest/
+#             day of the week is used. eg: if set to 'Fri' and the current
+#             day is Monday, the previous Friday is used. This defaults to
+#             1 (ie: from tomorrow);
 # @return A reference to a hash of days, each day listing the events on that day.
 sub request_events_as_days {
     my $self   = shift;
@@ -122,8 +131,10 @@ sub request_events_as_days {
     my $events = $self -> request_events($days, $from)
         or return undef;
 
-    my $result = { start => $events -> {"start"},
-                   end   => $events -> {"end"}
+    my $result = { start     => $events -> {"start"},
+                   startdate => $events -> {"startdate"},
+                   end       => $events -> {"end"},
+                   enddate   => $events -> {"enddate"},
     };
 
     foreach my $event (@{$events -> {"events"}}) {
@@ -150,6 +161,8 @@ sub request_events_as_days {
         $result -> {"days"} -> {$date} -> {"name"} -> {"short"} = $daydate -> strftime($self -> {"formats"} -> {"day"})
             if(!$result -> {"days"} -> {$date} -> {"name"} -> {"short"});
 
+        # store the date date for later
+        $result -> {"days"} -> {$date} -> {"date"} = $daydate;
     }
 
     return $result;
@@ -272,13 +285,9 @@ sub _make_time_string {
     my $startdate = $self -> _parse_datestring($start -> {"date"} || $start -> {"dateTime"});
     my $enddate   = $self -> _parse_datestring($end   -> {"date"} || $end   -> {"dateTime"});
 
-    # If there's a start date with no datetime, and and end date with no datetime, and tne end is one day after the start,
-    # it's actually an all day event
-    if($start -> {"date"} && !$start -> {"dateTime"} && $end -> {"date"} && !$end -> {"dateTime"}) {
-        my $nextday = $startdate -> clone() -> add(days => 1);
-        return $self -> {"strings"} -> {"allday"}
-            if($enddate eq $nextday);
-    }
+    # If the event is all day or multi-day all-day, the end day is set to the next day.
+    $enddate -> add(days => -1)
+        if($start -> {"date"} && !$start -> {"dateTime"} && $end -> {"date"} && !$end -> {"dateTime"});
 
     given(DateTime -> compare($startdate, $enddate)) {
         when(0)  { return $self -> {"strings"} -> {"allday"}}
