@@ -59,7 +59,8 @@ sub events_to_string {
     my $mode     = shift;
     my $ongoing  = "";
     my $upcoming = "";
-    my $table    = "";
+    my $tableon  = "";
+    my $tableup  = "";
 
     foreach my $day (sort keys(%{$events -> {"days"}})) {
         my $dayevents = "";
@@ -75,17 +76,35 @@ sub events_to_string {
             $ongoing .= $template -> load_template("$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
                                                                      "***id***"     => $day,
                                                                      "***events***" => $dayevents});
+
+            $tableon  .= $template -> load_template("$mode/table-day.tem", {"***id***"  => $day,
+                                                                            "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
         } else {
             $upcoming .= $template -> load_template("$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
                                                                       "***id***"     => $day,
                                                                       "***events***" => $dayevents});
+
+            $tableup  .= $template -> load_template("$mode/table-day.tem", {"***id***"  => $day,
+                                                                            "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
         }
 
-        $table  .= $template -> load_template("$mode/table-day.tem", {"***id***"  => $day,
-                                                                      "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
     }
 
-    $table = $template -> load_template("$mode/table.tem", {"***days***" => $table});
+    # Wrap the upcoming and ongoing lists as needed
+    $tableon = $template -> load_template("$mode/table-ongoing.tem", {"***ongoing***" => $tableon})
+        if($tableon);
+
+    $tableup = $template -> load_template("$mode/table-upcoming.tem", {"***upcoming***" => $tableup})
+        if($tableup);
+
+    $ongoing = $template -> load_template("$mode/ongoing.tem", {"***ongoing***" => $ongoing})
+        if($ongoing);
+
+    $upcoming = $template -> load_template("$mode/upcoming.tem", {"***upcoming***" => $upcoming})
+        if($upcoming);
+
+    my $table = $template -> load_template("$mode/table.tem", {"***ongoing***"  => $tableon,
+                                                               "***upcoming***" => $tableup});
 
     return $template -> load_template("$mode/email.tem", {"***table***"    => $table,
                                                           "***ongoing***"  => $ongoing,
