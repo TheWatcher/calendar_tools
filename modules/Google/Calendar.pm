@@ -84,8 +84,10 @@ sub request_events {
 
     $self -> clear_error();
 
+    $from = 1 if(!defined($from));
+
     # Calculate the request dates. Ensture that the start is truncated to the day
-    my $startdate = $self -> _make_from_datetime($from || "1") -> truncate(to => 'day');
+    my $startdate = $self -> _make_from_datetime($from) -> truncate(to => 'day');
     my $enddate   = $startdate -> clone() -> add(days => $days, hours => 23, minutes => 59, seconds => 59);
 
     my $url = URI -> new(path_join($self -> {"apiurl"}, $self -> {"settings"} -> {"calendar"} -> {"id"}, 'events'));
