@@ -27,6 +27,7 @@ use Webperl::Utils qw(path_join);
 
 use DateTime;
 use DateTime::Format::RFC3339;
+use List::Util qw(first);
 use List::MoreUtils qw(first_index);
 use JSON qw(decode_json);
 use URI;
@@ -65,9 +66,10 @@ sub new {
 # =============================================================================
 #  Google interaction code
 
-## @method $ request_events($days, $from)
+## @method $ request_events($calid, $days, $from)
 # Request the events for the next 'days' days.
 #
+# @param calid The ID of the calendar to fetch events from.
 # @param days The number of days of events to fetch.
 # @param from The date to start fetching events from. This can either be a
 #             ISO8601 datestamp, an offset in days from the current day,
@@ -78,9 +80,10 @@ sub new {
 # @return A reference to a hash containing the events, start and end edate on
 #         success, undef on error.
 sub request_events {
-    my $self = shift;
-    my $days = shift;
-    my $from = shift;
+    my $self  = shift;
+    my $calid = shift;
+    my $days  = shift;
+    my $from  = shift;
 
     $self -> clear_error();
 
@@ -90,7 +93,7 @@ sub request_events {
     my $startdate = $self -> _make_from_datetime($from) -> truncate(to => 'day');
     my $enddate   = $startdate -> clone() -> add(days => $days, hours => 23, minutes => 59, seconds => 59);
 
-    my $url = URI -> new(path_join($self -> {"apiurl"}, $self -> {"settings"} -> {"calendar"} -> {"id"}, 'events'));
+    my $url = URI -> new(path_join($self -> {"apiurl"}, $calid, 'events'));
     $url -> query_form( [ orderBy      => "startTime",
                           singleEvents => "true",
                           timeMin      => "$startdate",
@@ -110,27 +113,29 @@ sub request_events {
 }
 
 
-## @fn $ request_events_as_days($days, $from)
+## @method $ request_events_as_days($calid, $days, $from)
 # Request a list of events for the specified number of days, and convert the
 # result to a hash of date-keyed days, with each value being the list of
 # events on that day.
 #
-# @param days The number of days of events to fetch.
-# @param from The date to start fetching events from. This can either be a
-#             ISO8601 datestamp, an offset in days from the current day,
-#             or a day of the week. If the latter is used, the /nearest/
-#             day of the week is used. eg: if set to 'Fri' and the current
-#             day is Monday, the previous Friday is used. This defaults to
-#             1 (ie: from tomorrow);
+# @param calid The ID of the calendar to fetch events from.
+# @param days  The number of days of events to fetch.
+# @param from  The date to start fetching events from. This can either be a
+#              ISO8601 datestamp, an offset in days from the current day,
+#              or a day of the week. If the latter is used, the /nearest/
+#              day of the week is used. eg: if set to 'Fri' and the current
+#              day is Monday, the previous Friday is used. This defaults to
+#              1 (ie: from tomorrow);
 # @return A reference to a hash of days, each day listing the events on that day.
 sub request_events_as_days {
-    my $self   = shift;
-    my $days   = shift;
-    my $from   = shift;
+    my $self  = shift;
+    my $calid = shift;
+    my $days  = shift;
+    my $from  = shift;
 
     $self -> clear_error();
 
-    my $events = $self -> request_events($days, $from)
+    my $events = $self -> request_events($calid, $days, $from)
         or return undef;
 
     my $result = { start     => $events -> {"start"},
@@ -170,6 +175,67 @@ sub request_events_as_days {
     return $result;
 }
 
+
+# =============================================================================
+#  Event hash wrangling
+
+
+## @method $ merge_day_events($primary, $secondary)
+# Merge events in the secondary events hash into the primary events hash. This will
+# take any events in the secondary hash that do not appear in the primary and add
+# them to the primary, performing ordering as needed. This updates the primary
+# hash 'in place'.
+#
+# @param primary   The primary events hash.
+# @param secondary The secondary events hash.
+# @return A reference to the primary hash with the new elements.
+sub merge_day_events {
+    my $self      = shift;
+    my $primary   = shift;
+    my $secondary = shift;
+
+    # Begin by merging the hash of days in the seconday into the primary
+    foreach my $date (keys(%{$secondary -> {"days"}})) {
+        # This should never actually be needed, all keys in the hash should be dates, but check anyway
+        next unless($date =~ /^\d{4}-\d{2}-\d{2}$/);
+
+        # If there is no data in the primary for this day, just use it
+        if(!$primary -> {"days"} -> {$date}) {
+            $primary -> {"days"} -> {$date} = $secondary -> {"days"} -> {$date};
+
+        # primary contains data for the same date, merge the list of events
+        } else {
+            # Go through the list of events in the seconday, looking for events that
+            # are not in the primary. Add any events that are not in the primary
+            my $resort = 0;
+            foreach my $event (@{$secondary -> {"days"} -> {$date} -> {"events"}}) {
+                if(!first { $_ -> {"id"} eq $event -> {"id"} } @{$primary -> {"days"} -> {$date} -> {"events"}}) {
+                    push(@{$primary -> {"days"} -> {$date} -> {"events"}}, $event);
+                    $resort = 1;
+                }
+            }
+
+            # Re-sort the primary event list if needed
+            if($resort) {
+                my @sorted = sort _event_compare @{$primary -> {"days"} -> {$date} -> {"events"}};
+                $primary -> {"days"} -> {$date} -> {"events"} = \@sorted;
+            }
+        }
+    }
+
+    # Now handle start and end dates. Comparison works for the *date values as they're DateTime
+    $primary -> {"startdate"} = $secondary -> {"startdate"}
+        if(!$primary -> {"startdate"} || $secondary -> {"startdate"} < $primary -> {"startdate"});
+
+    $primary -> {"enddate"} = $secondary -> {"enddate"}
+        if(!$primary -> {"enddate"} || $secondary -> {"enddate"} > $primary -> {"enddate"});
+
+    # Convert the dates to strings
+    $primary -> {"start"} = $primary -> {"startdate"} -> strftime($self -> {"formats"} -> {"day"});
+    $primary -> {"end"}   = $primary -> {"enddate"} -> strftime($self -> {"formats"} -> {"day"});
+
+    return $primary;
+}
 
 
 # =============================================================================
@@ -399,6 +465,23 @@ sub _make_from_datetime {
     }
 
     return DateTime -> today(time_zone => "UTC", formatter => DateTime::Format::RFC3339 -> new());
+}
+
+
+# =============================================================================
+#  Merge support
+
+## @fn $ _event_compare(void)
+# A sort comparator function that compares two events.
+#
+sub _event_compare {
+    my $astart = $a -> {"start"} -> {"date"} || $a -> {"start"} -> {"dateTime"};
+    my $bstart = $b -> {"start"} -> {"date"} || $b -> {"start"} -> {"dateTime"};
+    my $aend   = $a -> {"end"} -> {"date"} || $a -> {"end"} -> {"dateTime"};
+    my $bend   = $b -> {"end"} -> {"date"} || $b -> {"end"} -> {"dateTime"};
+
+    # If the dates and times match, go off summary
+    return $astart cmp $bstart || $aend cmp $bend || $a -> {"summary"} cmp $b -> {"summary"};
 }
 
 

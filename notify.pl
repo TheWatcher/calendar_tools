@@ -49,6 +49,40 @@ sub save_tokens {
 }
 
 
+## @method get_events($calendar, $from, $days, $ids)
+# Generate a hash containing events pulled from calendars with the specified ids
+# from the given start date for a number of days.
+#
+# @param calendar A reference to a Google::Calendar object to fetch events through.
+# @param from     The date to start fetching events from. Can either be a datestamp
+#                 or an offset in days from the current day, or a day of the week.
+#                 See Google::Calendar::request_events() for more information.
+# @param days     The number of days of events to fetch.
+# @param ids      A string containing the google calendar IDs to read events from.
+#                 can either be a single ID string, or a comma separated list of
+#                 calendar IDs.
+# @return A reference to a hash containing the events, start, and end dates on
+#         success. Dies on error.
+sub get_events {
+    my $calendar = shift;
+    my $from     = shift;
+    my $days     = shift;
+    my $ids      = shift;
+
+    my @idlist = split(/,/, $ids);
+
+    my $allevents = {};
+    foreach my $id (@idlist) {
+        my $events = $calendar -> request_events_as_days($id, $days, $from)
+            or die "Unable to read events for calendar $id: ".$calendar -> errstr()."\n";
+
+        $calendar -> merge_day_events($allevents, $events);
+    }
+
+    return $allevents;
+}
+
+
 # =============================================================================
 #  Event handling code
 
@@ -203,8 +237,8 @@ sub generate_email {
                    "Reply-To" => $replyto,
                  ];
 
-    my $htmlbody = Encode::encode("iso-8859-1", events_to_email($events, $template, 'html'));
-    my $textbody = Encode::encode("iso-8859-1", events_to_email($events, $template, 'text'));
+    my $htmlbody = Encode::encode("iso-8859-1", events_to_string($events, $template, 'html'));
+    my $textbody = Encode::encode("iso-8859-1", events_to_string($events, $template, 'text'));
 
     $emailer -> send_email({ header => $header,
                              html_body => $htmlbody,
@@ -244,8 +278,15 @@ my $emailer = Emailer -> new(host => $config -> {"email"} -> {"host"},
                              port => $config -> {"email"} -> {"port"})
     or die "Unable to create emailer object\n";
 
-my $day_events = $calendar -> request_events_as_days($config -> {"notify"} -> {"days"}, $config -> {"notify"} -> {"from"});
+foreach my $section (keys %{$config}) {
+    # Only interested in calendar sections
+    next unless($section =~ /^calendar.\d+$/);
 
-print Dumper($day_events);
+    my $day_events = get_events($calendar,
+                                $config -> {"notify"} -> {"from"},
+                                $config -> {"notify"} -> {"days"},
+                                $config -> {$section} -> {"id"});
+    print events_to_string($day_events, $template, 'text');
 
-generate_email($day_events, $template, $emailer, $config);
+    #generate_email($day_events, $template, $emailer, $config);
+}
