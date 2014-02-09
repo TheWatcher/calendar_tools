@@ -1,0 +1,1 @@
+            <li id="user-import" title="{L_USERBAR_IMPORT}"><a href="***url-import***" class="item"><img class="controlicon" src="{V_[templatepath]}userbar/images/import.png" alt="import" /></a></li>

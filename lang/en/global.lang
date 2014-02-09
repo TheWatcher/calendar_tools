@@ -1,0 +1,55 @@
+EMAIL_SIG  = The {V_[sitename]} Team
+
+SITE_CONTINUE = Continue
+
+API_BAD_OP   = Unknown API operation requested.
+API_BAD_CALL = Incorrect invocation of an API-only module.
+API_ERROR    = An API error has occurred: ***error***
+
+API_SESSION_GONE = Your session appears to have timed out.<br /><br /><a href="***login_url***">Click here to log in again</a>
+
+# Times for Template::fancy_time
+TIMES_JUSTNOW = just now
+TIMES_SECONDS = %t seconds ago
+TIMES_MINUTE  = a minute ago
+TIMES_MINUTES = %t minutes ago
+TIMES_HOUR    = an hour ago
+TIMES_HOURS   = %t hours ago
+TIMES_DAY     = a day ago
+TIMES_DAYS    = %t days ago
+TIMES_WEEK    = a week ago
+TIMES_WEEKS   = %t weeks ago
+TIMES_MONTH   = a month ago
+TIMES_MONTHS  = %t months ago
+TIMES_YEAR    = a year ago
+TIMES_YEARS   = %t years ago
+
+FUTURE_JUSTNOW = shortly
+FUTURE_SECONDS = in %t seconds
+FUTURE_MINUTE  = in a minute
+FUTURE_MINUTES = in %t minutes
+FUTURE_HOUR    = in an hour
+FUTURE_HOURS   = in %t hours
+FUTURE_DAY     = in a day
+FUTURE_DAYS    = in %t days
+FUTURE_WEEK    = in a week
+FUTURE_WEEKS   = in %t weeks
+FUTURE_MONTH   = in a month
+FUTURE_MONTHS  = in %t months
+FUTURE_YEAR    = in a year
+FUTURE_YEARS   = in %t years
+
+BLOCK_BLOCK_DISPLAY   = Direct call to unimplemented block_display()
+BLOCK_SECTION_DISPLAY = Direct call to unimplemented section_display()
+
+PAGE_ERROR    = Error
+PAGE_ERROROK  = Okay
+
+FATAL_ERROR         = Fatal Error
+FATAL_ERROR_SUMMARY = The system has encountered a fatal error and can not continue. The error is shown below.
+
+CANCEL_OPTION = Cancel
+CLOSE_OPTION  = Close
+
+PAGE_POPUP    = Error
+PAGE_FOOTER   =

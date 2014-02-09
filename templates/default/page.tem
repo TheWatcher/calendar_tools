@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>***title***</title>
+
+    <link rel="stylesheet" type="text/css" href="{V_[templatepath]}css/core.css" />
+
+    <!-- mootools for effects and javascript sanity -->
+    <script type='text/javascript' src="{V_[templatepath]}js/mootools-core.js"></script>
+    <script type='text/javascript' src="{V_[templatepath]}js/mootools-more.js"></script>
+
+    <!-- API stuff -->
+    <script type='text/javascript' src="{V_[templatepath]}js/api.js"></script>
+
+    <!-- lightface for popup window -->
+    <script type='text/javascript' src="{V_[templatepath]}lightface/LightFaceMod.js"></script>
+    <link href="{V_[templatepath]}lightface/LightFace.css" rel="stylesheet" type="text/css" />
+
+    <!-- userbar support -->
+    <script type='text/javascript' src="{V_[templatepath]}js/userbar.js"></script>
+    <link rel="stylesheet" type="text/css" href="{V_[templatepath]}css/userbar.css" />
+
+    <!-- favicon -->
+    <link rel="icon" type="image/png" href="{V_[templatepath]}images/favicon.png" />
+
+    ***extrahead***
+
+    <!--[if IE]>
+    <style type="text/css">
+    </style>
+    <![endif]-->
+</head>
+<body id="aviary" class="aviary">
+<div id="content" class="content clear">
+***content***
+            <script type="text/javascript">
+// <![CDATA[
+window.addEvent('domready', function() {
+    errbox = new LightFace({title: '{L_PAGE_ERROR}',
+                            width: '800px',
+                            draggable: false,
+                            overlayAll: true,
+                            buttons: [
+                                      { title: '{L_PAGE_ERROROK}', event: function() { errbox.close(); }, color: 'blue' },
+                            ],
+                            content: '<table><tr><td class="nbox-image"><img src="{V_[scriptpath]}templates/default/images/error.png" width="48" height="48" alt="error" /></td><td class="nbox-text" id="errboxmsg"></td></tr></table>'
+    });
+    popbox = new LightFace({title: '<div id="poptitle">{L_PAGE_POPUP}</div>',
+                            draggable: false,
+                            overlayAll: true,
+                            content: '<div id="popbody"></div>',
+                            zIndex: 8001,
+                            pad: 200,
+                            width: '800px',
+    });
+});
+// ]]>
+            </script>
+    <div class="footer">{L_PAGE_FOOTER}</div>
+</div>
+***userbar***
+</body>
+</html>
