@@ -1,7 +1,7 @@
 autodocs/
 images/
 groupscripts/
-config/site.cfg
+config/
 ckeditor
 templates/default/datepicker
 .emacs.desktop
