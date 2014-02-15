@@ -44,7 +44,7 @@ sub save_tokens {
     my $token = shift;
 
     $config -> {"google"} -> {"token"} = $token;
-    $config -> write(path_join($scriptpath, "config", "config.cfg"))
+    $config -> write()
         or die "Unable to write configuration: ".$config -> errstr()."\n";
 }
 
@@ -255,7 +255,7 @@ sub generate_email {
 }
 
 
-$config = Webperl::ConfigMicro -> new(path_join($scriptpath, "config", "config.cfg"), quote_values => '')
+$config = Webperl::ConfigMicro -> new(path_join($scriptpath, "config", "site.cfg"), quote_values => '')
     or die "Unable to load configuration: ".$Webperl::SystemModule::errstr;
 
 $config -> {"config"} -> {"base"} = $scriptpath;
