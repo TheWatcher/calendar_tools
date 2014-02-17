@@ -23,13 +23,14 @@ package Google::Calendar;
 use v5.12;
 
 use base qw(Webperl::SystemModule);
-use Webperl::Utils qw(path_join);
+use Webperl::Utils qw(path_join hash_or_hashref);
 
 use DateTime;
 use DateTime::Format::RFC3339;
+use JSON qw(decode_json);
 use List::Util qw(first);
 use List::MoreUtils qw(first_index);
-use JSON qw(decode_json);
+use Scalar::Util qw(blessed);
 use URI;
 
 # ============================================================================
@@ -66,50 +67,50 @@ sub new {
 # =============================================================================
 #  Google interaction code
 
-## @method $ request_events($calid, $days, $from)
-# Request the events for the next 'days' days.
+## @method $ events_list(%args)
+# Fetch a list of events from a Google calendar.
 #
-# @param calid The ID of the calendar to fetch events from.
-# @param days The number of days of events to fetch.
-# @param from The date to start fetching events from. This can either be a
-#             ISO8601 datestamp, an offset in days from the current day,
-#             or a day of the week. If the latter is used, the /nearest/
-#             day of the week is used. eg: if set to 'Fri' and the current
-#             day is Monday, the previous Friday is used. This defaults to
-#             1 (ie: from tomorrow);
-# @return A reference to a hash containing the events, start and end edate on
-#         success, undef on error.
-sub request_events {
-    my $self  = shift;
-    my $calid = shift;
-    my $days  = shift;
-    my $from  = shift;
+# Supported arguments are:
+#
+# - `calendarId`: required, ID of the calendar to fetch events for.
+# - `orderBy`: the order to return events in, can be 'startTime' (the default) or 'updated'.
+# - `singleEvents`:  expand recurring events into instances and only return single one-off
+#   events and instances of recurring events. Defaults to "true".
+# - `timeMin`: optional lower bound (inclusive) for an event's end time to filter by.
+# - `timeMax`: optional upper bound (exclusive) for an event's start time to filter by.
+# - `pageToken`: optional token specifying the page of results to return.
+# - `maxResults`: optional maximum number of events to return.
+#
+# The response hash contains the following keys:
+#
+# - `events`: A reference to an array of Event resources
+# - `nextpage`: The next page token to pass to the API. Not included if there are no more pages.
+# - `start`: A human readable (not ISO8601/RCF3339) string containing the start date.
+#            Note that ongoing events may start before this.
+# - `startdate`: A DateTime object representing the start of the list.
+# - `end`: A human readable (not ISO8601/RCF3339) string containing the end date.
+#            Note that ongoing events may end after this.
+# - `enddate`: A DateTime object representing the end of the list.
+#
+# @param args A hash, or reference to a hash, containing the args to set.
+# @return A reference to a hash containing the response
+sub events_list {
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
 
     $self -> clear_error();
 
-    $from = 1 if(!defined($from));
-
-    # Calculate the request dates. Ensture that the start is truncated to the day
-    my $startdate = $self -> _make_from_datetime($from) -> truncate(to => 'day');
-    my $enddate   = $startdate -> clone() -> add(days => $days, hours => 23, minutes => 59, seconds => 59);
-
-    my $url = URI -> new(path_join($self -> {"apiurl"}, $calid, 'events'));
-    $url -> query_form( [ orderBy      => "startTime",
-                          singleEvents => "true",
-                          timeMin      => "$startdate",
-                          timeMax      => "$enddate" ]);
-
-    my $result = $self -> {"agent"} -> get($url);
+    # Issue the query
+    my $query  = $self -> _build_list_query($args);
+    my $result = $self -> {"agent"} -> get($query);
 
     return $self -> self_error("Google API request failed: ".$result -> status_line)
         unless($result -> is_success);
 
+    # convert the json to a hash
     my $decoded = decode_json($result -> content());
-    return { events    => $decoded -> {"items"},
-             start     => $startdate -> strftime($self -> {"formats"} -> {"day"}),
-             startdate => $startdate,
-             end       => $enddate -> strftime($self -> {"formats"} -> {"day"}),
-             enddate   => $enddate};
+
+    return $self -> _build_list_response($args, $decoded);
 }
 
 
@@ -135,7 +136,17 @@ sub request_events_as_days {
 
     $self -> clear_error();
 
-    my $events = $self -> request_events($calid, $days, $from)
+    $from = 1 if(!defined($from));
+
+    # Calculate the request dates. Ensture that the start is truncated to the day
+    my $startdate = $self -> _make_datetime($from) -> truncate(to => 'day');
+
+    # Enddate is exclusive, so just add 1 to the day
+    my $enddate   = $startdate -> clone() -> add(days => $days + 1);
+
+    my $events = $self -> events_list(calendarId => $calid,
+                                      timeMin    => $startdate,
+                                      timeMax    => $enddate)
         or return undef;
 
     my $result = { start     => $events -> {"start"},
@@ -235,6 +246,123 @@ sub merge_day_events {
     $primary -> {"end"}   = $primary -> {"enddate"} -> strftime($self -> {"formats"} -> {"day"});
 
     return $primary;
+}
+
+
+# =============================================================================
+#  Private google code
+
+## @method private $ _build_list_query($args)
+# Generate the query URI to use when sending an events list request to the API.
+# Supported arguments are:
+#
+# - `calendarId`: required, ID of the calendar to fetch events for.
+# - `orderBy`: the order to return events in, can be 'startTime' (the default) or 'updated'.
+# - `singleEvents`:  expand recurring events into instances and only return single one-off
+#   events and instances of recurring events. Defaults to "true".
+# - `timeMin`: optional lower bound (inclusive) for an event's end time to filter by.
+# - `timeMax`: optional upper bound (exclusive) for an event's start time to filter by.
+# - `pageToken`: optional token specifying the page of results to return.
+# - `maxResults`: optional maximum number of events to return.
+#
+# @param args A reference to a hash containing the args to set.
+# @return A reference to a URI object containing the query.
+sub _build_list_query {
+    my $self = shift;
+    my $args = shift;
+
+    # Basic always-defined-some-way arguments
+    my $query = { orderBy      => $args -> {"orderBy"} || "startTime",
+                  singleEvents => $args -> {"singleEvents"} || "true" };
+
+    # Hande time ranges
+    $query -> {"timeMin"} = $self -> _make_datetime($args -> {"timeMin"}, 1)
+        if(defined($args -> {"timeMin"}));
+    $query -> {"timeMax"} = $self -> _make_datetime($args -> {"timeMax"}, 1)
+        if(defined($args -> {"timeMax"}));
+
+    # Is this a paged query?
+    $query -> {"pageToken"} = $args -> {"pageToken"}
+        if($args -> {"pageToken"});
+
+    # Is there a count limit?
+    $query -> {"maxResults"} = $args -> {"maxResults"}
+        if($args -> {"maxResults"});
+
+    # Build the url with the query
+    my $url = URI -> new(path_join($self -> {"apiurl"}, $args -> {"calendarId"}, 'events'));
+    $url -> query_form($query);
+
+    return $url;
+}
+
+
+## @method private $ _build_list_response($args, $apidata)
+# Generate the response hash containing the data returned from the API. The
+# response hash contains the following keys:
+#
+# - `events`: A reference to an array of Event resources
+# - `nextpage`: The next page token to pass to the API. Not included if there are no more pages.
+# - `start`: A human readable (not ISO8601/RCF3339) string containing the start date.
+#            Note that ongoing events may start before this.
+# - `startdate`: A DateTime object representing the start of the list.
+# - `end`: A human readable (not ISO8601/RCF3339) string containing the end date.
+#            Note that ongoing events may end after this.
+# - `enddate`: A DateTime object representing the end of the list.
+#
+# @param args    A reference to a hash containing the args used to generate the API response.
+# @param apidata A reference to a hash containing the data returned from the API.
+# @return A reference to a hash containing the response.
+sub _build_list_response {
+    my $self    = shift;
+    my $args    = shift;
+    my $apidata = shift;
+    my ($startdate, $enddate);
+
+    # Did the args include start or end dates? If so, use them
+    $startdate = $self -> _make_datetime($args -> {"timeMin"})
+        if(defined($args -> {"timeMin"}));
+    $enddate = $self -> _make_datetime($args -> {"timeMax"})
+        if(defined($args -> {"timeMax"}));
+
+    # If there's no start or end date specified, try to work them out from the
+    # data returned from the api. Which is fun.
+    if(scalar(@{$apidata -> {"items"}})) {
+        $startdate = $self -> _fetch_datetime($apidata -> {"items"} -> [0] -> {"start"});
+        $enddate   = $self -> _fetch_datetime($apidata -> {"items"} -> [-1] -> {"end"});
+    }
+
+    my $result = { events => $apidata -> {"items"} };
+
+    $result -> {"nextpage"} = $apidata -> {"nextPageToken"}
+        if($apidata -> {"nextPageToken"});
+
+    if($startdate) {
+        $result -> {"start"}     = $startdate -> strftime($self -> {"formats"} -> {"day"});
+        $result -> {"startdate"} = $startdate;
+    }
+
+    if($enddate) {
+        $result -> {"end"}     = $enddate -> strftime($self -> {"formats"} -> {"day"});
+        $result -> {"enddate"} = $enddate;
+    }
+
+    return $result;
+}
+
+
+## @method private $ _fetch_datetime($datetime)
+#
+#
+# @return A DateTime object representing the specified date.
+sub _fetch_datetime {
+    my $self     = shift;
+    my $datetime = shift;
+
+    return undef if(!defined($datetime));
+
+    # Handle situations where the event is all day (just a date) or timed (dateTime)
+    return $self -> _parse_datestring($datetime -> {"date"} || $datetime -> {"dateTime"});
 }
 
 
@@ -438,33 +566,71 @@ sub _make_daydesc {
 }
 
 
-## @method private $ _make_from_datetime($from)
+## @method private $ _make_datetime($from, $asstr)
 # Given a 'from' description, which may either be a positive or negative number,
 # an ISO8601 datestamp, or a weekday name (optionally preceeded by -), produce a
 # DateTime object representing the day to fetch entries from.
 #
-# @param from The from date description string
+# @param from  The from date description string
+# @param asstr If true, the date is returned as a string rather than a DateTime object.
 # @return A DateTime object. If the from string is not valid, this will return
 #         a DateTime object for the current day.
-sub _make_from_datetime {
-    my $self = shift;
-    my $from = shift;
+sub _make_datetime {
+    my $self  = shift;
+    my $from  = shift;
+    my $asstr = shift;
 
+    my $datetime;
     given($from) {
+        # Is the argument already a DateTime object? If so, create a clone for safety
+        when($self -> _is_datetime($from)) {
+            $datetime = $from -> clone();
+
+            # Force RFC3339 formatter
+            $datetime -> set_formatter(DateTime::Format::RFC3339 -> new());
+        }
+
+        # Is the argument an offset from the current day
         when(/^(-?\d+)$/) {
-            return DateTime -> today(time_zone => "UTC", formatter => DateTime::Format::RFC3339 -> new()) -> add(days => $1);
+            $datetime = DateTime -> today(time_zone => "UTC", formatter => DateTime::Format::RFC3339 -> new()) -> add(days => $1);
         }
+
+        # Is the argument an ISO8601 date/datetime?
         when(/^\d{4}-\d{2}-\d{2}(?:t\d{2}:\d{2}:\d{2})?/) {
-            return $self -> _parse_datestring($from);
+            $datetime = $self -> _parse_datestring($from);
         }
+
+        # Is the argument an absolute epoch datetime?
+        when(/^=(\d+)$/) {
+            $datetime = DateTime -> from_epoch(epoch => $1, time_zone => "UTC", formatter => DateTime::Format::RFC3339 -> new());
+        }
+
+        # Try parsing it as a day description
         default {
             my $daydesc = $self -> _make_daydesc($from);
-            return $self -> _make_weekday($daydesc -> {"day"}, !$daydesc -> {"previous"})
+            $datetime = $self -> _make_weekday($daydesc -> {"day"}, !$daydesc -> {"previous"})
                 if($daydesc);
         }
     }
 
-    return DateTime -> today(time_zone => "UTC", formatter => DateTime::Format::RFC3339 -> new());
+    # If there's still no datetime here, fall back on today.
+    $datetime = DateTime -> today(time_zone => "UTC", formatter => DateTime::Format::RFC3339 -> new())
+        if(!$datetime);
+
+    return $asstr ? "$datetime" : $datetime;
+}
+
+
+## @method $ _is_datetime($arg)
+# Determine whether the provided argument is a DateTime object or not.
+#
+# @param arg The scalar to check.
+# @return true if the arg is a DateTime object, false otherwise
+sub _is_datetime {
+    my $self = shift;
+    my $arg  = shift;
+
+    return (blessed $arg && $arg -> isa('DateTime'));
 }
 
 
