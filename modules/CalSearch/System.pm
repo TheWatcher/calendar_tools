@@ -58,12 +58,6 @@ sub init {
                                                                logger   => $self -> {"logger"})
         or return $self -> self_error("Metadata system init failed: ".$Webperl::SystemModule::errstr);
 
-    $self -> {"tags"} = CalSearch::System::Tags -> new(dbh      => $self -> {"dbh"},
-                                                       settings => $self -> {"settings"},
-                                                       logger   => $self -> {"logger"},
-                                                       metadata => $self -> {"metadata"})
-        or return $self -> self_error("Tag system init failed: ".$Webperl::SystemModule::errstr);
-
     $self -> {"roles"} = CalSearch::System::Roles -> new(dbh      => $self -> {"dbh"},
                                                          settings => $self -> {"settings"},
                                                          logger   => $self -> {"logger"},
