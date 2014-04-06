@@ -100,17 +100,29 @@ sub events_list {
 
     $self -> clear_error();
 
+    my $output = {};
+    my $nextpage = undef;
+
     # Issue the query
-    my $query  = $self -> _build_list_query($args);
-    my $result = $self -> {"agent"} -> get($query);
+    do {
+        my $query  = $self -> _build_list_query($args);
+        my $result = $self -> {"agent"} -> get($query);
 
-    return $self -> self_error("Google API request failed: ".$result -> status_line)
-        unless($result -> is_success);
+        return $self -> self_error("Google API request failed: ".$result -> status_line)
+            unless($result -> is_success);
 
-    # convert the json to a hash
-    my $decoded = decode_json($result -> content());
+        # convert the json to a hash
+        my $decoded = decode_json($result -> content());
 
-    return $self -> _build_list_response($args, $decoded);
+        my $response = $self -> _build_list_response($args, $decoded);
+
+        $self -> merge_events($output, $response);
+
+        $args -> {"pageToken"} = $response -> {"nextpage"};
+        print "Got pageToken: ".($args -> {"pageToken"} ? $args -> {"pageToken"} : "none")."\n";
+    } while($args -> {"pageToken"});
+
+    return $output;
 }
 
 
@@ -151,8 +163,10 @@ sub request_events_as_days {
 
     my $result = { start     => $events -> {"start"},
                    startdate => $events -> {"startdate"},
+                   reqstart  => $startdate,
                    end       => $events -> {"end"},
                    enddate   => $events -> {"enddate"},
+                   reqend    => $enddate,
     };
 
     foreach my $event (@{$events -> {"events"}}) {
@@ -165,6 +179,9 @@ sub request_events_as_days {
 
         # convert the day to a DateTime object as it is needed below
         my $daydate = $self -> _parse_datestring($date);
+
+        # Build datetime objects and other information for the event
+        $self -> _make_datetimes($event);
 
         # Nice version of the event start/end string
         $event -> {"timestring"} = $self -> _make_time_string($event -> {"start"}, $event -> {"end"}, $daydate);
@@ -189,6 +206,36 @@ sub request_events_as_days {
 
 # =============================================================================
 #  Event hash wrangling
+
+
+## @method void merge_events($primary, $secondary)
+# Merge events in the secondary events hash into the primary events hash. This will
+# take any events in the secondary hash that do not appear in the primary and add
+# them to the primary, performing ordering as needed. This updates the primary
+# hash 'in place'.
+#
+# @param primary   The primary events hash.
+# @param secondary The secondary events hash.
+sub merge_events {
+    my $self      = shift;
+    my $primary   = shift;
+    my $secondary = shift;
+
+    push(@{$primary -> {"events"}}, @{$secondary -> {"events"}});
+
+    $primary -> {"startdate"} = $secondary -> {"startdate"}
+        if(!$primary -> {"startdate"} || $secondary -> {"startdate"} < $primary -> {"startdate"});
+
+    $primary -> {"enddate"} = $secondary -> {"enddate"}
+        if(!$primary -> {"enddate"} || $secondary -> {"enddate"} > $primary -> {"enddate"});
+
+    # Convert the dates to strings
+    $primary -> {"start"} = $primary -> {"startdate"} -> strftime($self -> {"formats"} -> {"day"});
+    $primary -> {"end"}   = $primary -> {"enddate"} -> strftime($self -> {"formats"} -> {"day"});
+
+    $primary -> {"nextpage"} = $secondary -> {"nextpage"};
+}
+
 
 
 ## @method $ merge_day_events($primary, $secondary)
@@ -240,6 +287,12 @@ sub merge_day_events {
 
     $primary -> {"enddate"} = $secondary -> {"enddate"}
         if(!$primary -> {"enddate"} || $secondary -> {"enddate"} > $primary -> {"enddate"});
+
+    $primary -> {"reqstart"} = $secondary -> {"reqstart"}
+        if(!$primary -> {"reqstart"} || $secondary -> {"reqstart"} < $primary -> {"reqstart"});
+
+    $primary -> {"reqend"} = $secondary -> {"reqend"}
+        if(!$primary -> {"reqend"} || $secondary -> {"reqend"} > $primary -> {"reqend"});
 
     # Convert the dates to strings
     $primary -> {"start"} = $primary -> {"startdate"} -> strftime($self -> {"formats"} -> {"day"});
@@ -496,6 +549,27 @@ sub _make_time_string {
     return $self -> {"strings"} -> {"unknown"};
 }
 
+
+sub _make_datetimes {
+    my $self  = shift;
+    my $event = shift;
+
+    $event -> {"start"} -> {"DateTimeObj"} = $self -> _parse_datestring($event -> {"start"} -> {"date"} || $event -> {"start"} -> {"dateTime"});
+    $event -> {"end"}   -> {"DateTimeObj"} = $self -> _parse_datestring($event -> {"end"}   -> {"date"} || $event -> {"end"}  -> {"dateTime"});
+
+    my $adjusted = $event -> {"end"} -> {"DateTimeObj"} -> clone();
+
+    # If the event is all day or multi-day all-day, the end day is set to the next day.
+    if($event -> {"start"} -> {"date"} && !$event -> {"start"} -> {"dateTime"} &&
+       $event -> {"end"} -> {"date"}   && !$event -> {"end"} -> {"dateTime"}) {
+        $event -> {"end"} -> {"DateTimeObj"} -> add(seconds => -1);
+
+        # Work out 'all day' marker.
+        $adjusted -> add(days => -1);
+        $event -> {"allday"} = (DateTime -> compare($event -> {"start"} -> {"DateTimeObj"}, $adjusted) == 0);
+    }
+
+}
 
 # =============================================================================
 #  Private 'from' day related code
