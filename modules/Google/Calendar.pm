@@ -114,12 +114,12 @@ sub events_list {
         # convert the json to a hash
         my $decoded = decode_json($result -> content());
 
+        # Convert fields in the response into something usable, and then merge into
+        # the accumulated data.
         my $response = $self -> _build_list_response($args, $decoded);
-
         $self -> merge_events($output, $response);
 
         $args -> {"pageToken"} = $response -> {"nextpage"};
-        print "Got pageToken: ".($args -> {"pageToken"} ? $args -> {"pageToken"} : "none")."\n";
     } while($args -> {"pageToken"});
 
     return $output;
