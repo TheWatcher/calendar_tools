@@ -552,6 +552,16 @@ sub _make_time_string {
 }
 
 
+## @method private $ _make_datetimes($event)
+# Generate the DateTime objects for the start and end times of the specified event,
+# and various supporting attributes to make date handling easier:
+#
+# - `start` and `end` hashes have `notime` set to true if there is no time component for
+#   the start or end.
+# - `allday` is true if the event is an all day event.
+# - `multiday` is true if the event is multiple days
+#
+# @param event A reference to the event to update.
 sub _make_datetimes {
     my $self  = shift;
     my $event = shift;
@@ -559,19 +569,30 @@ sub _make_datetimes {
     $event -> {"start"} -> {"DateTimeObj"} = $self -> _parse_datestring($event -> {"start"} -> {"date"} || $event -> {"start"} -> {"dateTime"});
     $event -> {"end"}   -> {"DateTimeObj"} = $self -> _parse_datestring($event -> {"end"}   -> {"date"} || $event -> {"end"}  -> {"dateTime"});
 
+    # Determine whether there are times set for the start or end
+    $event -> {"start"} -> {"notime"} = ($event -> {"start"} -> {"date"} && !$event -> {"start"} -> {"dateTime"});
+    $event -> {"end"}   -> {"notime"} = ($event -> {"end"} -> {"date"}   && !$event -> {"end"} -> {"dateTime"});
+
     my $adjusted = $event -> {"end"} -> {"DateTimeObj"} -> clone();
 
     # If the event is all day or multi-day all-day, the end day is set to the next day.
-    if($event -> {"start"} -> {"date"} && !$event -> {"start"} -> {"dateTime"} &&
-       $event -> {"end"} -> {"date"}   && !$event -> {"end"} -> {"dateTime"}) {
+    if($event -> {"start"} -> {"notime"} && $event -> {"end"} -> {"notime"}) {
         $event -> {"end"} -> {"DateTimeObj"} -> add(seconds => -1);
 
         # Work out 'all day' marker.
         $adjusted -> add(days => -1);
-        $event -> {"allday"} = (DateTime -> compare($event -> {"start"} -> {"DateTimeObj"}, $adjusted) == 0);
-    }
+        $event -> {"allday"}   = (DateTime -> compare($event -> {"start"} -> {"DateTimeObj"}, $adjusted) == 0);
+        $event -> {"multiday"} = (DateTime -> compare($event -> {"start"} -> {"DateTimeObj"}, $adjusted) == -1);
 
+    # Check for multiday events
+    } else {
+        my $startday = $event -> {"start"} -> {"DateTimeObj"} -> clone() -> truncate(to => 'days');
+        my $endday   = $event -> {"start"} -> {"DateTimeObj"} -> clone() -> truncate(to => 'days');
+
+        $event -> {"multiday"} = (DateTime -> compare($startday, $endday) == -1);
+    }
 }
+
 
 # =============================================================================
 #  Private 'from' day related code
