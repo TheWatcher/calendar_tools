@@ -80,6 +80,9 @@ sub new {
 # - `timeMax`: optional upper bound (exclusive) for an event's start time to filter by.
 # - `pageToken`: optional token specifying the page of results to return.
 # - `maxResults`: optional maximum number of events to return.
+# - `noAutoPage`: set this to true to prevent automatic fetching of multiple pages. If
+#                 set to false (or omitted), this function will fetch all available pages
+#                 to match the calendar query.
 #
 # The response hash contains the following keys:
 #
@@ -120,7 +123,7 @@ sub events_list {
         $self -> merge_events($output, $response);
 
         $args -> {"pageToken"} = $response -> {"nextpage"};
-    } while($args -> {"pageToken"});
+    } while(!$args -> {"noAutoPage"} && $args -> {"pageToken"});
 
     return $output;
 }
