@@ -213,9 +213,9 @@ sub request_events_as_days {
 
 ## @method void merge_events($primary, $secondary)
 # Merge events in the secondary events hash into the primary events hash. This will
-# take any events in the secondary hash that do not appear in the primary and add
-# them to the primary, performing ordering as needed. This updates the primary
-# hash 'in place'.
+# take the events in the secondary hash and append them to the list in the primary,
+# it **does not** check to ensure duplicates are avoided: it assumes this will be
+# called as part of events_list() to merge pages of events with no overlapping.
 #
 # @param primary   The primary events hash.
 # @param secondary The secondary events hash.
@@ -238,7 +238,6 @@ sub merge_events {
 
     $primary -> {"nextpage"} = $secondary -> {"nextpage"};
 }
-
 
 
 ## @method $ merge_day_events($primary, $secondary)
