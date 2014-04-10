@@ -23,6 +23,7 @@ use Webperl::ConfigMicro;
 use Webperl::Utils qw(path_join);
 use Webperl::Template;
 use DateTime;
+use DBI;
 use HTML::WikiConverter;
 use LWP::Authen::OAuth2;
 use Data::Dumper;
@@ -34,18 +35,22 @@ use Google::Calendar;
 # =============================================================================
 #  Google interaction code
 
-## @fn void save_tokens($token)
+## @fn void save_tokens($token, $dbh, $settings)
 # Save the tokens provided by Google to the configuration file. This is a
 # callback used by the OAuth2 handler to support automated saving of the
 # tokens provided by google.
 #
 # @param token The token string to save to the configuration file.
 sub save_tokens {
-    my $token = shift;
+    my $token    = shift;
+    my $dbh      = shift;
+    my $settings = shift;
 
-    $config -> {"google"} -> {"token"} = $token;
-    $config -> write()
-        or die "Unable to write configuration: ".$config -> errstr()."\n";
+    my $confh = $dbh -> prepare("UPDATE `".$settings -> {"database"} -> {"settings"}."`
+                                 SET `value` = ? WHERE `name` = 'google:token'");
+    my $rows = $confh -> execute($token);
+    die "Unable to update API token: ".$dbh -> errstr."\n" if(!$rows);
+    die "API token update failed: no rows updated\n" if($rows eq "0E0");
 }
 
 
@@ -116,7 +121,7 @@ sub events_to_string {
                                                                          "***location***" => $event -> {"location"} });
         }
 
-        if(DateTime->compare($events -> {"days"} -> {$day} -> {"date"}, $events -> {"startdate"}) < 0) {
+        if(DateTime->compare($events -> {"days"} -> {$day} -> {"date"}, $events -> {"reqstart"}) < 0) {
             $ongoing .= $template -> load_template("$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
                                                                      "***id***"     => $day,
                                                                      "***events***" => $dayevents});
@@ -260,17 +265,27 @@ $config = Webperl::ConfigMicro -> new(path_join($scriptpath, "config", "site.cfg
 
 $config -> {"config"} -> {"base"} = $scriptpath;
 
-my $agent = LWP::Authen::OAuth2->new(client_id        => $config -> {"google"} -> {"client_id"},
-                                     client_secret    => $config -> {"google"} -> {"client_secret"},
+my $dbh = DBI->connect($config -> {"database"} -> {"database"},
+                       $config -> {"database"} -> {"username"},
+                       $config -> {"database"} -> {"password"},
+                       { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 })
+    or die "Unable to connect to database: ".$DBI::errstr."\n";
+
+# Pull configuration data out of the database into the settings hash
+$config -> load_db_config($dbh, $config -> {"database"} -> {"settings"});
+
+my $agent = LWP::Authen::OAuth2->new(client_id        => $config -> {"config"} -> {"google:client_id"},
+                                     client_secret    => $config -> {"config"} -> {"google:client_secret"},
                                      service_provider => "Google",
-                                     redirect_uri     => $config -> {"google"} -> {"redirect_uri"},
+                                     redirect_uri     => $config -> {"config"} -> {"google:redirect_uri"},
 
                                      # Optional hook, but recommended.
                                      save_tokens      => \&save_tokens,
+                                     save_tokens_args => [ $dbh, $config ],
 
                                      # This is for when you have tokens from last time.
-                                     token_string     => $config -> {"google"} -> {"token"},
-                                     scope            => $config -> {"google"} -> {"scope"},
+                                     token_string     => $config -> {"config"} -> {"google:token"},
+                                     scope            => $config -> {"config"} -> {"google:scope"},
 
                                      flow => "web server",
                  );
