@@ -1,0 +1,54 @@
+<script type="text/javascript">
+    spinner_imgurl   = '{V_[templatepath]}images/spinner.gif';
+
+    window.addEvent('domready', function() {
+        Locale.use('en-GB');
+
+        $$('input.datepick').each(function(element) {
+                var stampname = element.get('id')+"_ts";
+
+                new Picker.Date(element, { timePicker: false,
+                                           yearPicker: true,
+                                           positionOffset: {x: 5, y: 0},
+                                           pickerClass: 'datepicker_dashboard',
+                                           useFadeInOut: !Browser.ie,
+                                           onSelect: function(date) {
+                                               $(stampname).set('value', date.getTime());
+                                           }
+                                         });
+        });
+
+        new OverText('newcalid', { wrap: true });
+   });
+</script>
+<div id="calendarlist" class="shadowbox">
+    <h2>{L_PROFILE_CALENDARS_TITLE}</h2>
+    <div class="sbcontent">
+        <table class="listtable">
+            <thead>
+                <tr>
+                    <th>{L_PROFILE_CALENDARS_CALENDAR}</th>
+                    <th>{L_PROFILE_CALENDARS_START}</th>
+                    <th>{L_PROFILE_CALENDARS_END}</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <td><div class="widepad"><input class="fillwide" id="newcalid" name="newcalid" title="{L_PROFILE_CALENDARS_NEWCALID}" /></div></td>
+                    <td><input class="fillwide datepick" type="text" name="newcalstart" id="newcalstart" size="16" maxlength="16" />
+                        <input type="hidden" name="newcalstart_ts" id="newcalstart_ts" /></td>
+                    <td><input class="fillwide datepick" type="text" name="newcalend" id="newcalend" size="16" maxlength="16" />
+                        <input type="hidden" name="newcalend_ts" id="newcalend_ts" /></td>
+                    <td><button class="button blue" name="newcal" id="newcal">{L_PROFILE_CALENDARS_NEWCAL}</button></td>
+                </tr>
+                <tr>
+                    <td colspan="4"><div id="newcalwrap">{L_PROFILE_CALENDARS_NEWCALINFO}<span id="newcalinfo"></span></div></td>
+                </tr>
+            </tfoot>
+            <tbody>
+***callist***
+            </tbody>
+        </table>
+    </div>
+</div>

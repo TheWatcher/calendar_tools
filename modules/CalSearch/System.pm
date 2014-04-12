@@ -27,6 +27,7 @@ use base qw(Webperl::System);
 
 use CalSearch::System::Metadata;
 use CalSearch::System::Roles;
+use CalSearch::System::Calendar;
 
 
 ## @method $ init(%args)
@@ -63,6 +64,11 @@ sub init {
                                                          logger   => $self -> {"logger"},
                                                          metadata => $self -> {"metadata"})
         or return $self -> self_error("Roles system init failed: ".$Webperl::SystemModule::errstr);
+
+    $self -> {"calendar"} = CalSearch::System::Calendar -> new(dbh      => $self -> {"dbh"},
+                                                               settings => $self -> {"settings"},
+                                                               logger   => $self -> {"logger"})
+        or return $self -> self_error("Calendar module init failed: ".$Webperl::SystemModule::errstr);
 
     return 1;
 }

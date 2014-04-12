@@ -28,9 +28,9 @@ use CGI::Carp qw(fatalsToBrowser set_message); # Catch as many fatals as possibl
 use Webperl::Application;
 
 # Webapp modules
-use Aviary::AppUser;
-use Aviary::BlockSelector;
-use Aviary::System;
+use CalSearch::AppUser;
+use CalSearch::BlockSelector;
+use CalSearch::System;
 
 delete @ENV{qw(PATH IFS CDPATH ENV BASH_ENV)}; # Clean up ENV
 
@@ -43,8 +43,8 @@ sub handle_errors {
 }
 set_message(\&handle_errors);
 
-my $app = Webperl::Application -> new(appuser        => Aviary::AppUser -> new(),
-                                      system         => Aviary::System -> new(),
-                                      block_selector => Aviary::BlockSelector -> new())
+my $app = Webperl::Application -> new(appuser        => CalSearch::AppUser -> new(),
+                                      system         => CalSearch::System -> new(),
+                                      block_selector => CalSearch::BlockSelector -> new())
     or die "Unable to create application";
 $app -> run();

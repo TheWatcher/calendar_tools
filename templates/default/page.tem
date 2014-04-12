@@ -5,6 +5,7 @@
     <title>***title***</title>
 
     <link rel="stylesheet" type="text/css" href="{V_[templatepath]}css/core.css" />
+    <link rel="stylesheet" type="text/css" href="{V_[templatepath]}css/calsearch.css" />
 
     <!-- mootools for effects and javascript sanity -->
     <script type='text/javascript' src="{V_[templatepath]}js/mootools-core.js"></script>
@@ -31,7 +32,7 @@
     </style>
     <![endif]-->
 </head>
-<body id="aviary" class="aviary">
+<body id="calsearch" class="calsearch">
 <div id="content" class="content clear">
 ***content***
             <script type="text/javascript">

@@ -63,7 +63,7 @@ sub new {
 # ============================================================================
 #  HTML generation support
 
-## @method $ generate_aviary_page($title, $content, $extrahead, $doclink)
+## @method $ generate_calsearch_page($title, $content, $extrahead, $doclink)
 # A convenience function to wrap page content in the standard page template. This
 # function allows blocks to embed their content in a page without having to build
 # the whole page including "common" items themselves. It should be called to wrap
@@ -75,7 +75,7 @@ sub new {
 # @param doclink   The name of a document link to include in the userbar. If not
 #                  supplied, no link is shown.
 # @return A string containing the page.
-sub generate_aviary_page {
+sub generate_calsearch_page {
     my $self      = shift;
     my $title     = shift;
     my $content   = shift;
@@ -497,7 +497,7 @@ sub build_login_url {
                               fullurl  => 1,
                               pathinfo => [],
                               params   => {},
-                              forcessl => 1);
+                              forcessl => 0);
 }
 
 

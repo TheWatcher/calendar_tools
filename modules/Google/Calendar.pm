@@ -67,6 +67,26 @@ sub new {
 # =============================================================================
 #  Google interaction code
 
+## @method $ calendar_info($calendarid)
+# Fetch the metadata information for the specified calendar.
+#
+# @param calendarid The ID of the calendar to fetch the metadata for.
+# @return A reference to a hash containing the repsonse.
+sub calendar_info {
+    my $self       = shift;
+    my $calendarid = shift;
+
+    my $query = $self -> _build_calendar_query({calendarId => $calendarid});
+    my $result = $self -> {"agent"} -> get($query);
+
+    return $self -> self_error("Google API request failed: ".$result -> status_line)
+        unless($result -> is_success);
+
+    # convert the json to a hash
+    return decode_json($result -> content());
+}
+
+
 ## @method $ events_list(%args)
 # Fetch a list of events from a Google calendar.
 #
@@ -347,6 +367,25 @@ sub _build_list_query {
     # Build the url with the query
     my $url = URI -> new(path_join($self -> {"apiurl"}, $args -> {"calendarId"}, 'events'));
     $url -> query_form($query);
+
+    return $url;
+}
+
+
+## @method private $ _build_calendar_query($args)
+# Generate the query URI to use when sending a calendar metadata request to the API.
+# Supported arguments are:
+#
+# - `calendarId`: required, ID of the calendar to fetch events for.
+#
+# @param args A reference to a hash containing the args to set.
+# @return A reference to a URI object containing the query.
+sub _build_calendar_query {
+    my $self = shift;
+    my $args = shift;
+
+    # Build the url with the query
+    my $url = URI -> new(path_join($self -> {"apiurl"}, $args -> {"calendarId"}));
 
     return $url;
 }

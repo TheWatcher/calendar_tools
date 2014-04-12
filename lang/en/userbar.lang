@@ -9,6 +9,6 @@ USERBAR_LOGIN           = Log in
 
 USERBAR_DOCLINK         = Documentation (opens in new window)
 
-USERBAR_FRONT           = Aviary front page
+USERBAR_FRONT           = Calsearch front page
 
-USERBAR_IMPORT          = Import schedule
+USERBAR_IMPORT          = Import calendars

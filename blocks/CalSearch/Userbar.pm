@@ -74,7 +74,7 @@ sub block_display {
         my $user = $self -> {"session"} -> get_user_byid()
             or return $self -> self_error("Unable to obtain user data for logged in user. This should not happen!");
 
-        $import  = $self -> {"template"} -> load_template("userbar/import_enabled.tem"  , {"***url-import***" => $self -> build_url(block => "import", pathinfo => [])})
+        $import  = $self -> {"template"} -> load_template("userbar/import_enabled.tem"  , {"***url-import***" => $self -> build_url(block => "profile", pathinfo => ['import'])})
             if($self -> check_permission("import") && $current ne "import");
 
         # User is logged in, so actually reflect their current options and state

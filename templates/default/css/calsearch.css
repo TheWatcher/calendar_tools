@@ -1,16 +1,16 @@
-#aviary-core {
+#calsearch-core {
     padding-top: 40px;
     margin: 0px auto;
     width: 1000px;
 }
 
-#aviary-core > ul {
+#calsearch-core > ul {
     float: left;
     margin: 0px;
     padding: 0px;
 }
 
-#aviary-core > ul > li {
+#calsearch-core > ul > li {
     list-style-type: none;
     margin: 0px 0px 10px 0px;
     overflow: hidden;
