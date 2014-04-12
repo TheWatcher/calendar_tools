@@ -115,52 +115,52 @@ sub events_to_string {
         my $dayevents = "";
 
         foreach my $event (@{$events -> {"days"} -> {$day} -> {"events"}}) {
-            $dayevents .= $template -> load_template("$mode/event.tem", {"***summary***"  => $event -> {"summary"},
-                                                                         "***url***"      => $event -> {"htmlLink"},
-                                                                         "***time***"     => $event -> {"timestring"},
-                                                                         "***location***" => $event -> {"location"} });
+            $dayevents .= $template -> load_template("notify/$mode/event.tem", {"***summary***"  => $event -> {"summary"},
+                                                                                "***url***"      => $event -> {"htmlLink"},
+                                                                                "***time***"     => $event -> {"timestring"},
+                                                                                "***location***" => $event -> {"location"} });
         }
 
         if(DateTime->compare($events -> {"days"} -> {$day} -> {"date"}, $events -> {"reqstart"}) < 0) {
-            $ongoing .= $template -> load_template("$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
-                                                                     "***id***"     => $day,
-                                                                     "***events***" => $dayevents});
+            $ongoing .= $template -> load_template("notify/$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
+                                                                            "***id***"     => $day,
+                                                                            "***events***" => $dayevents});
 
-            $tableon  .= $template -> load_template("$mode/table-day.tem", {"***id***"  => $day,
-                                                                            "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
+            $tableon  .= $template -> load_template("notify/$mode/table-day.tem", {"***id***"  => $day,
+                                                                                   "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
         } else {
-            $upcoming .= $template -> load_template("$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
-                                                                      "***id***"     => $day,
-                                                                      "***events***" => $dayevents});
+            $upcoming .= $template -> load_template("notify/$mode/day.tem", {"***name***"   => $events -> {"days"} -> {$day} -> {"name"} -> {"long"},
+                                                                             "***id***"     => $day,
+                                                                             "***events***" => $dayevents});
 
-            $tableup  .= $template -> load_template("$mode/table-day.tem", {"***id***"  => $day,
-                                                                            "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
+            $tableup  .= $template -> load_template("notify/$mode/table-day.tem", {"***id***"  => $day,
+                                                                                   "***day***" => $events -> {"days"} -> {$day} -> {"name"} -> {"short"}});
         }
 
     }
 
     # Wrap the upcoming and ongoing lists as needed
-    $tableon = $template -> load_template("$mode/table-ongoing.tem", {"***ongoing***" => $tableon})
+    $tableon = $template -> load_template("notify/$mode/table-ongoing.tem", {"***ongoing***" => $tableon})
         if($tableon);
 
-    $tableup = $template -> load_template("$mode/table-upcoming.tem", {"***upcoming***" => $tableup})
+    $tableup = $template -> load_template("notify/$mode/table-upcoming.tem", {"***upcoming***" => $tableup})
         if($tableup);
 
-    $ongoing = $template -> load_template("$mode/ongoing.tem", {"***ongoing***" => $ongoing})
+    $ongoing = $template -> load_template("notify/$mode/ongoing.tem", {"***ongoing***" => $ongoing})
         if($ongoing);
 
-    $upcoming = $template -> load_template("$mode/upcoming.tem", {"***upcoming***" => $upcoming})
+    $upcoming = $template -> load_template("notify/$mode/upcoming.tem", {"***upcoming***" => $upcoming})
         if($upcoming);
 
-    my $table = $template -> load_template("$mode/table.tem", {"***ongoing***"  => $tableon,
-                                                               "***upcoming***" => $tableup});
+    my $table = $template -> load_template("notify/$mode/table.tem", {"***ongoing***"  => $tableon,
+                                                                      "***upcoming***" => $tableup});
 
-    return $template -> load_template("$mode/email.tem", {"***table***"    => $table,
-                                                          "***ongoing***"  => $ongoing,
-                                                          "***upcoming***" => $upcoming,
-                                                          "***title***"    => $title,
-                                                          "***start***"    => $events -> {"start"},
-                                                          "***end***"      => $events -> {"end"}});
+    return $template -> load_template("notify/$mode/email.tem", {"***table***"    => $table,
+                                                                 "***ongoing***"  => $ongoing,
+                                                                 "***upcoming***" => $upcoming,
+                                                                 "***title***"    => $title,
+                                                                 "***start***"    => $events -> {"start"},
+                                                                 "***end***"      => $events -> {"end"}});
 }
 
 
@@ -218,9 +218,9 @@ sub make_email_subject {
     my $title    = shift;
     my $template = shift;
 
-    return $template -> load_template("subject.tem", {"***start***" => $events -> {"start"},
-                                                      "***end***"   => $events -> {"end"},
-                                                      "***title***" => $title});
+    return $template -> load_template("notify/subject.tem", {"***start***" => $events -> {"start"},
+                                                             "***end***"   => $events -> {"end"},
+                                                             "***title***" => $title});
 }
 
 
