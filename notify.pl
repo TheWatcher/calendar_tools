@@ -159,8 +159,8 @@ sub events_to_string {
                                                                  "***ongoing***"  => $ongoing,
                                                                  "***upcoming***" => $upcoming,
                                                                  "***title***"    => $title,
-                                                                 "***start***"    => $events -> {"start"},
-                                                                 "***end***"      => $events -> {"end"}});
+                                                                 "***start***"    => $events -> {"reqstart_str"},
+                                                                 "***end***"      => $events -> {"reqend_str"}});
 }
 
 
@@ -218,8 +218,8 @@ sub make_email_subject {
     my $title    = shift;
     my $template = shift;
 
-    return $template -> load_template("notify/subject.tem", {"***start***" => $events -> {"start"},
-                                                             "***end***"   => $events -> {"end"},
+    return $template -> load_template("notify/subject.tem", {"***start***" => $events -> {"reqstart_str"},
+                                                             "***end***"   => $events -> {"reqend_str"},
                                                              "***title***" => $title});
 }
 

@@ -184,12 +184,14 @@ sub request_events_as_days {
                                       timeMax    => $enddate)
         or return undef;
 
-    my $result = { start     => $events -> {"start"},
-                   startdate => $events -> {"startdate"},
-                   reqstart  => $startdate,
-                   end       => $events -> {"end"},
-                   enddate   => $events -> {"enddate"},
-                   reqend    => $enddate,
+    my $result = { start        => $events -> {"start"},
+                   startdate    => $events -> {"startdate"},
+                   reqstart     => $startdate,
+                   reqstart_str => $startdate -> strftime($self -> {"formats"} -> {"day"}),
+                   end          => $events -> {"end"},
+                   enddate      => $events -> {"enddate"},
+                   reqend       => $enddate,
+                   reqend_str   => $enddate -> strftime($self -> {"formats"} -> {"day"}),
     };
 
     foreach my $event (@{$events -> {"events"}}) {
@@ -257,6 +259,7 @@ sub merge_events {
     $primary -> {"end"}   = $primary -> {"enddate"} -> strftime($self -> {"formats"} -> {"day"});
 
     $primary -> {"nextpage"} = $secondary -> {"nextpage"};
+
 }
 
 
@@ -310,11 +313,15 @@ sub merge_day_events {
     $primary -> {"enddate"} = $secondary -> {"enddate"}
         if(!$primary -> {"enddate"} || $secondary -> {"enddate"} > $primary -> {"enddate"});
 
-    $primary -> {"reqstart"} = $secondary -> {"reqstart"}
-        if(!$primary -> {"reqstart"} || $secondary -> {"reqstart"} < $primary -> {"reqstart"});
+    if(!$primary -> {"reqstart"} || $secondary -> {"reqstart"} < $primary -> {"reqstart"}) {
+        $primary -> {"reqstart"}     = $secondary -> {"reqstart"};
+        $primary -> {"reqstart_str"} = $secondary -> {"reqstart_str"};
+    }
 
-    $primary -> {"reqend"} = $secondary -> {"reqend"}
-        if(!$primary -> {"reqend"} || $secondary -> {"reqend"} > $primary -> {"reqend"});
+    if(!$primary -> {"reqend"} || $secondary -> {"reqend"} > $primary -> {"reqend"}) {
+        $primary -> {"reqend"} = $secondary -> {"reqend"};
+        $primary -> {"reqend_str"} = $secondary -> {"reqend_str"};
+    }
 
     # Convert the dates to strings
     $primary -> {"start"} = $primary -> {"startdate"} -> strftime($self -> {"formats"} -> {"day"});
@@ -625,8 +632,8 @@ sub _make_datetimes {
 
     # Check for multiday events
     } else {
-        my $startday = $event -> {"start"} -> {"DateTimeObj"} -> clone() -> truncate(to => 'days');
-        my $endday   = $event -> {"start"} -> {"DateTimeObj"} -> clone() -> truncate(to => 'days');
+        my $startday = $event -> {"start"} -> {"DateTimeObj"} -> clone() -> truncate(to => 'day');
+        my $endday   = $event -> {"start"} -> {"DateTimeObj"} -> clone() -> truncate(to => 'day');
 
         $event -> {"multiday"} = (DateTime -> compare($startday, $endday) == -1);
     }
