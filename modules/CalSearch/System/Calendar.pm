@@ -25,25 +25,6 @@ use LWP::Authen::OAuth2;
 use Google::Calendar;
 
 
-## @fn void save_tokens($token, $dbh, $settings)
-# Save the tokens provided by Google to the configuration file. This is a
-# callback used by the OAuth2 handler to support automated saving of the
-# tokens provided by google.
-#
-# @param token The token string to save to the configuration file.
-sub save_tokens {
-    my $token    = shift;
-    my $dbh      = shift;
-    my $settings = shift;
-
-    my $confh = $dbh -> prepare("UPDATE `".$settings -> {"database"} -> {"settings"}."`
-                                 SET `value` = ? WHERE `name` = 'google:token'");
-    my $rows = $confh -> execute($token);
-    die "Unable to update API token: ".$dbh -> errstr."\n" if(!$rows);
-    die "API token update failed: no rows updated\n" if($rows eq "0E0");
-}
-
-
 # ==============================================================================
 #  Creation
 
@@ -60,27 +41,33 @@ sub save_tokens {
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_)
+    my $self     = $class -> SUPER::new("scope"   => "https://www.googleapis.com/auth/calendar.readonly",
+                                        "user_id" => undef,
+                                        @_)
         or return undef;
 
-    $self -> {"agent"} = LWP::Authen::OAuth2 -> new(client_id        => $self -> {"settings"} -> {"config"} -> {"google:client_id"},
-                                                    client_secret    => $self -> {"settings"} -> {"config"} -> {"google:client_secret"},
-                                                    service_provider => "Google",
-                                                    redirect_uri     => $self -> {"settings"} -> {"config"} -> {"google:redirect_uri"},
+    $self -> {"token"} = $self -> _get_user_token();
 
-                                                    # Optional hook, but recommended.
-                                                    save_tokens      => \&save_tokens,
-                                                    save_tokens_args => [ $self -> {"dbh"}, $self -> {"settings"} ],
+    $self -> {"agent"} = LWP::Authen::OAuth2->new(client_id        => $self -> {"settings"} -> {"config"} -> {"google:client_id"},
+                                                  client_secret    => $self -> {"settings"} -> {"config"} -> {"google:client_secret"},
+                                                  service_provider => "Google",
+                                                  redirect_uri     => $self -> {"settings"} -> {"config"} -> {"google:redirect_uri"},
+                                                  scope            => $self -> {"scope"},
+                                                  flow             => "web server",
+                                                  access_type      => "offline",
+                                                  approval_prompt  => "force",
 
-                                                    # This is for when you have tokens from last time.
-                                                    token_string     => $self -> {"settings"} -> {"config"} -> {"google:token"},
-                                                    scope            => $self -> {"settings"} -> {"config"} -> {"google:scope"},
+                                                  # Optional hook, but recommended.
+                                                  save_tokens      => \&_save_tokens,
+                                                  save_tokens_args => [ $self -> {"dbh"}, $self -> {"settings"}, $self -> {"logger"}, $self -> {"user_id"} ],
 
-                                                    flow => "web server");
+                                                  # This is for when you have tokens from last time.
+                                                  token_string     => $self -> {"token"},
+        );
 
     $self -> {"api"} = Google::Calendar -> new(agent    => $self -> {"agent"},
                                                settings => $self -> {"settings"})
-        or return Webperl::SystemModule::set_error("Unable to create calendar object: ".$Webperl::SystemModule::errstr);
+        or die "Unable to create calendar object\n";
 
     return $self;
 }
@@ -113,6 +100,16 @@ sub get_calendar_info {
 # ==============================================================================
 #  Database related
 
+## @method $ user_has_token()
+# Determine whether the current user has a Google API token string available, and
+# if so attempt
+sub user_has_token {
+    my $self = shift;
+
+    return(defined($self -> {"token"}) && $self -> {"token"});
+}
+
+
 ## @method $ get_user_calendars($userid)
 # Fetch the list of calendars the user has added.
 #
@@ -132,6 +129,59 @@ sub get_user_calendars {
         or return $self -> self_error("Unable to execute user calendar lookup: ".$self -> {"dbh"} -> errstr);
 
     return $cals -> fetchall_arrayref({});
+}
+
+
+# ==============================================================================
+#  Private internal madness
+
+## @method private $ _get_user_token($userid)
+# Fetch the access token for the specified user from the database.
+#
+# @param userid The ID of the user to fetch the token for.
+# @return The access token string on success, undef on error or if the
+#         user has no token associated with their account.
+sub _get_user_token {
+    my $self   = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    my $userh = $self -> {"dbh"} -> prepare("SELECT `token`
+                                             FROM `".$settings -> {"database"} -> {"user_tokens"}."`
+                                             WHERE `user_id` = ?");
+    $userh -> execute($userid)
+        or return $self -> self_error("Unable to look up user token: ".$self -> {"dbh"} -> errstr);
+
+    my $usertoken = $userh -> fetchrow_arrayref();
+    return $usertoken ? $usertoken -> [0] : undef;
+}
+
+
+## @fn void _save_tokens($token, $dbh, $settings, $logger, $userid)
+# Save the tokens provided by Google to the configuration file. This is a
+# callback used by the OAuth2 handler to support automated saving of the
+# tokens provided by google.
+#
+# @param token    The token string to save to the configuration file.
+# @param dbh      A reference to a database handle to issue queries through.
+# @param settings A reference to the global settings data.
+# @param logger   A reference to a logger object to record error messages.
+# @param userid   The ID of the user who owns the token.
+sub save_tokens {
+    my $token    = shift;
+    my $dbh      = shift;
+    my $settings = shift;
+    my $logger   = shift;
+    my $userid   = shift;
+
+    my $confh = $dbh -> prepare("INSERT INTO `".$settings -> {"database"} -> {"user_tokens"}."`
+                                 (`user_id`, `token`)
+                                 VALUES (?, ?)
+                                 ON DUPLICATE KEY UPDATE `token` = VALUES(`token`)");
+    my $rows = $confh -> execute($userid, $token);
+    $logger -> die_log(undef, "Unable to update API token: ".$dbh -> errstr) if(!$rows);
+    $logger -> die_log(undef, "API token update failed: no rows updated") if($rows eq "0E0");
 }
 
 
