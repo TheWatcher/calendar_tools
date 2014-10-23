@@ -65,9 +65,11 @@ sub init {
                                                          metadata => $self -> {"metadata"})
         or return $self -> self_error("Roles system init failed: ".$Webperl::SystemModule::errstr);
 
+    # At this point get_session_userid should be safe; Application will have set up the session.
     $self -> {"calendar"} = CalSearch::System::Calendar -> new(dbh      => $self -> {"dbh"},
                                                                settings => $self -> {"settings"},
-                                                               logger   => $self -> {"logger"})
+                                                               logger   => $self -> {"logger"},
+                                                               user_id  => $self -> {"session"} -> get_session_userid())
         or return $self -> self_error("Calendar module init failed: ".$Webperl::SystemModule::errstr);
 
     return 1;

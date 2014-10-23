@@ -45,18 +45,22 @@ sub _generate_import {
     my $self = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
 
-    # Fetch the list of calendars the user has imported and convert to html
-    my $calendars = $self -> {"system"} -> {"calendar"} -> get_user_calendars($userid);
-    my $callist = "";
-    foreach my $calendar (@{$calendars}) {
-        $callist .= $self -> {"template"} -> load_template("profile/calendars/entry.tem", {"***title***"       => $calendar -> {"title"},
-                                                                                           "***description***" => $calendar -> {"description"},
-                                                                                           "***startdate***"   => $calendar -> {"startdate"},
-                                                                                           "***enddate***"     => $calendar -> {"enddate"},
-                                                                                           "***startfmt***"    => $self -> {"template"} -> format_time($calendar -> {"startdate"}, "%d/%m/%Y %H:%M"),
-                                                                                           "***endfmt***"      => $self -> {"template"} -> format_time($calendar -> {"enddate"}  , "%d/%m/%Y %H:%M"),
-                                                                                           "***id***"          => $calendar -> {"id"}});
-    }
+    # Determine whether the user has a google API token
+    if($self -> {"system"} -> {"calendar"} -> user_has_token()) {
+        # Fetch the list of calendars the user has imported and convert to html
+        my $calendars = $self -> {"system"} -> {"calendar"} -> get_user_calendars($userid);
+        my $callist = "";
+        foreach my $calendar (@{$calendars}) {
+            $callist .= $self -> {"template"} -> load_template("profile/calendars/entry.tem", {"***title***"       => $calendar -> {"title"},
+                                                                                               "***description***" => $calendar -> {"description"},
+                                                                                               "***startdate***"   => $calendar -> {"startdate"},
+                                                                                               "***enddate***"     => $calendar -> {"enddate"},
+                                                                                               "***startfmt***"    => $self -> {"template"} -> format_time($calendar -> {"startdate"}, "%d/%m/%Y %H:%M"),
+                                                                                               "***endfmt***"      => $self -> {"template"} -> format_time($calendar -> {"enddate"}  , "%d/%m/%Y %H:%M"),
+                                                                                               "***id***"          => $calendar -> {"id"}});
+        }
+    } else {
+        $callist = $self -> {"template"} ->
 
     return ($self -> {"template"} -> replace_langvar("PROFILE_CALENDARS_TITLE"),
             $self -> {"template"} -> load_template("profile/calendars/content.tem", {"***callist***" => $callist }),
