@@ -47,7 +47,7 @@ sub save_tokens {
     my $settings = shift;
 
     my $confh = $dbh -> prepare("UPDATE `".$settings -> {"database"} -> {"settings"}."`
-                                 SET `value` = ? WHERE `name` = 'google:token'");
+                                 SET `value` = ? WHERE `name` = 'legacy:token'");
     my $rows = $confh -> execute($token);
     die "Unable to update API token: ".$dbh -> errstr."\n" if(!$rows);
     die "API token update failed: no rows updated\n" if($rows eq "0E0");
@@ -274,18 +274,18 @@ my $dbh = DBI->connect($config -> {"database"} -> {"database"},
 # Pull configuration data out of the database into the settings hash
 $config -> load_db_config($dbh, $config -> {"database"} -> {"settings"});
 
-my $agent = LWP::Authen::OAuth2->new(client_id        => $config -> {"config"} -> {"google:client_id"},
-                                     client_secret    => $config -> {"config"} -> {"google:client_secret"},
+my $agent = LWP::Authen::OAuth2->new(client_id        => $config -> {"config"} -> {"legacy:client_id"},
+                                     client_secret    => $config -> {"config"} -> {"legacy:client_secret"},
                                      service_provider => "Google",
-                                     redirect_uri     => $config -> {"config"} -> {"google:redirect_uri"},
+                                     redirect_uri     => $config -> {"config"} -> {"legacy:redirect_uri"},
 
                                      # Optional hook, but recommended.
                                      save_tokens      => \&save_tokens,
                                      save_tokens_args => [ $dbh, $config ],
 
                                      # This is for when you have tokens from last time.
-                                     token_string     => $config -> {"config"} -> {"google:token"},
-                                     scope            => $config -> {"config"} -> {"google:scope"},
+                                     token_string     => $config -> {"config"} -> {"legacy:token"},
+                                     scope            => $config -> {"config"} -> {"legacy:scope"},
 
                                      flow => "web server",
                  );
