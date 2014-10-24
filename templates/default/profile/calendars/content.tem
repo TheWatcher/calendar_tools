@@ -24,31 +24,6 @@
 <div id="calendarlist" class="shadowbox">
     <h2>{L_PROFILE_CALENDARS_TITLE}</h2>
     <div class="sbcontent">
-        <table class="listtable">
-            <thead>
-                <tr>
-                    <th>{L_PROFILE_CALENDARS_CALENDAR}</th>
-                    <th>{L_PROFILE_CALENDARS_START}</th>
-                    <th>{L_PROFILE_CALENDARS_END}</th>
-                    <th>&nbsp;</th>
-                </tr>
-            </thead>
-            <tfoot>
-                <tr>
-                    <td><div class="widepad"><input class="fillwide" id="newcalid" name="newcalid" title="{L_PROFILE_CALENDARS_NEWCALID}" /></div></td>
-                    <td><input class="fillwide datepick" type="text" name="newcalstart" id="newcalstart" size="16" maxlength="16" />
-                        <input type="hidden" name="newcalstart_ts" id="newcalstart_ts" /></td>
-                    <td><input class="fillwide datepick" type="text" name="newcalend" id="newcalend" size="16" maxlength="16" />
-                        <input type="hidden" name="newcalend_ts" id="newcalend_ts" /></td>
-                    <td><button class="button blue" name="newcal" id="newcal">{L_PROFILE_CALENDARS_NEWCAL}</button></td>
-                </tr>
-                <tr>
-                    <td colspan="4"><div id="newcalwrap">{L_PROFILE_CALENDARS_NEWCALINFO}<span id="newcalinfo"></span></div></td>
-                </tr>
-            </tfoot>
-            <tbody>
-***callist***
-            </tbody>
-        </table>
+***content***
     </div>
 </div>

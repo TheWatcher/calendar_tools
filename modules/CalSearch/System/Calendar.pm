@@ -23,7 +23,9 @@ use strict;
 use base qw(Webperl::SystemModule);
 use LWP::Authen::OAuth2;
 use Google::Calendar;
-
+use Digest;
+use MIME::Base64;
+use Crypt::Random qw(makerandom);
 
 # ==============================================================================
 #  Creation
@@ -110,51 +112,117 @@ sub user_has_token {
 }
 
 
-## @method $ get_user_calendars($userid)
+## @method $ get_user_calendars()
 # Fetch the list of calendars the user has added.
 #
-# @param userid The ID of the user to fetch the calendar list for
 # @return A reference to an array of calendar sources on success, undef on error.
 #         This will return an empty array ref if the user has no calendars set.
 sub get_user_calendars {
     my $self   = shift;
-    my $userid = shift;
 
     $self -> clear_error();
 
     my $cals = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"calendars"}."`
                                             WHERE `user_id` = ?
                                             ORDER BY `title`, `last_import`");
-    $cals -> execute($userid)
+    $cals -> execute($self -> {"user_id"})
         or return $self -> self_error("Unable to execute user calendar lookup: ".$self -> {"dbh"} -> errstr);
 
     return $cals -> fetchall_arrayref({});
 }
 
 
+## @method private $ _get_csrf_token()
+# Fetch the anti Cross-Site Request Forgery token for the specified user. This
+# will obtain the users CSRF token, creating one if the user does not have one.
+#
+# @return The CSRF token string on success, undef on error.
+sub get_csrf_token {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $csrf = $self -> _get_user_csrf();
+    return undef unless(defined($csrf)); # undef return means an error occurred
+    return $csrf if($csrf);              # return the token if there is one
+
+    $csrf = $self -> _make_user_csrf();
+    return undef unless(defined($csrf)); # undef return means an error occurred
+    return $csrf;
+}
+
+
+
 # ==============================================================================
 #  Private internal madness
 
-## @method private $ _get_user_token($userid)
+## @method private $ _get_user_token()
 # Fetch the access token for the specified user from the database.
 #
-# @param userid The ID of the user to fetch the token for.
 # @return The access token string on success, undef on error or if the
 #         user has no token associated with their account.
 sub _get_user_token {
     my $self   = shift;
-    my $userid = shift;
 
     $self -> clear_error();
 
     my $userh = $self -> {"dbh"} -> prepare("SELECT `token`
-                                             FROM `".$settings -> {"database"} -> {"user_tokens"}."`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"user_tokens"}."`
                                              WHERE `user_id` = ?");
-    $userh -> execute($userid)
+    $userh -> execute($self -> {"user_id"})
         or return $self -> self_error("Unable to look up user token: ".$self -> {"dbh"} -> errstr);
 
     my $usertoken = $userh -> fetchrow_arrayref();
     return $usertoken ? $usertoken -> [0] : undef;
+}
+
+
+## @method private $ _get_user_csrf()
+# Fetch the csrf token for the specified user from the database.
+#
+# @return The csrf token string on success, undef on error, an
+#         empty string if the user has no csrf token.
+sub _get_user_csrf {
+    my $self   = shift;
+
+    $self -> clear_error();
+
+    my $userh = $self -> {"dbh"} -> prepare("SELECT `csrf`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"user_tokens"}."`
+                                             WHERE `user_id` = ?");
+    $userh -> execute($self -> {"user_id"})
+        or return $self -> self_error("Unable to look up user csrf: ".$self -> {"dbh"} -> errstr);
+
+    my $usertoken = $userh -> fetchrow_arrayref();
+    return $usertoken ? $usertoken -> [0] : "";
+}
+
+
+## @method private $ _make_user_csrf()
+# Generate a csrf token for the specified user and store it in the database.
+#
+# @return The csrf token string on success, undef on error.
+sub _make_user_csrf {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    # Generate the csrf token based on the userid, the time, and a 512 bit random number
+    my $sha256 = Digest -> new("SHA-256");
+    $sha256 -> add("userid:".$self -> {"user_id"}."-time:".time());
+    $sha256 -> add(encode_base64(makerandom(Size => 512, Strength => 0), ""));
+    my $csrf = $sha256 -> hexdigest();
+
+    # And shove it into the database
+    my $inserth = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"user_tokens"}."`
+                                               (`user_id`, `csrf`)
+                                               VALUES (?, ?)
+                                               ON DUPLICATE KEY UPDATE `csrf` = VALUES(`csrf`)");
+    my $rows = $inserth -> execute($self -> {"user_id"}, $csrf);
+    return $self -> self_error("Unable to update CSRF token: ".$self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("CSRF token update failed: no rows updated") if($rows eq "0E0");
+
+    return $csrf;
 }
 
 

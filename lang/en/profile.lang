@@ -7,3 +7,7 @@ PROFILE_CALENDARS_NEWCALID = Google Calendar ID
 PROFILE_CALENDARS_NEWCAL   = Add Calendar
 
 PROFILE_CALENDARS_NEWCALINFO = Calendar:
+
+PROFILE_TOKENREQ_HELP = The calendar system does not currently have permission to communicate with your calendars through the Google API. When you click the button below, a page will open asking you to grant access to your calendars.
+PROFILE_TOKENREQ      = Set up Google API access
+PROFILE_TOKENWAIT     = Waiting for Google...

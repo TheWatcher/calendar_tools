@@ -3,6 +3,22 @@
     max-width: 1130px;
 }
 
+div.tokenreq_help {
+    width: 80%;
+    margin: 0.25em auto;
+}
+
+div.tokenreq_box {
+    text-align: center;
+    margin: 0.5em auto;
+}
+div#token_working {
+    text-align: center;
+    margin: 0px auto;
+    display: none;
+}
+
+
 div.successbox {
     margin: 0px auto;
     width: 440px;

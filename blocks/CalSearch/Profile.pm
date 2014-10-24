@@ -43,12 +43,12 @@ sub _generate_profile {
 #         page content.
 sub _generate_import {
     my $self = shift;
-    my $userid = $self -> {"session"} -> get_session_userid();
+    my $content = "";
 
     # Determine whether the user has a google API token
     if($self -> {"system"} -> {"calendar"} -> user_has_token()) {
         # Fetch the list of calendars the user has imported and convert to html
-        my $calendars = $self -> {"system"} -> {"calendar"} -> get_user_calendars($userid);
+        my $calendars = $self -> {"system"} -> {"calendar"} -> get_user_calendars();
         my $callist = "";
         foreach my $calendar (@{$calendars}) {
             $callist .= $self -> {"template"} -> load_template("profile/calendars/entry.tem", {"***title***"       => $calendar -> {"title"},
@@ -59,11 +59,14 @@ sub _generate_import {
                                                                                                "***endfmt***"      => $self -> {"template"} -> format_time($calendar -> {"enddate"}  , "%d/%m/%Y %H:%M"),
                                                                                                "***id***"          => $calendar -> {"id"}});
         }
+
+        $content = $self -> {"template"} -> load_template("profile/calendars/caltable.tem", {"***callist***" => $callist});
     } else {
-        $callist = $self -> {"template"} ->
+        $content = $self -> {"template"} -> load_template("profile/calendars/token_req.tem", {"***csrf***" => $self -> {"system"} -> {"calendar"} -> get_csrf_token()});
+    }
 
     return ($self -> {"template"} -> replace_langvar("PROFILE_CALENDARS_TITLE"),
-            $self -> {"template"} -> load_template("profile/calendars/content.tem", {"***callist***" => $callist }),
+            $self -> {"template"} -> load_template("profile/calendars/content.tem", {"***content***" => $content }),
             $self -> {"template"} -> load_template("profile/calendars/extrahead.tem"));
 }
 
