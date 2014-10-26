@@ -78,6 +78,16 @@ sub new {
 # ==============================================================================
 #  API wrapper
 
+sub get_auth_url() {
+    my $self = shift;
+
+    return $self -> {"agent"} -> authorization_url(redirect_uri    => $self -> {"settings"} -> {"config"} -> {"google:redirect_uri"},
+                                                   scope           => $self -> {"scope"},
+                                                   state           => $self -> get_csrf_token(),
+                                                   access_type     => "offline",
+                                                   approval_prompt => "force");
+}
+
 
 ## @method $ get_calendar_info($calendarid)
 # Use the Google API to fetch the title and description for the calendar with the specified ID.

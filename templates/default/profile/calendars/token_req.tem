@@ -1,3 +1,3 @@
 <div class="tokenreq_help">{L_PROFILE_TOKENREQ_HELP}</div>
-<div class="tokenreq_box"><a onclick="return google_wait(true);" href="http://starforge.co.uk" class="button blue ext" id="tokenreq_btn">{L_PROFILE_TOKENREQ}</a></div>
+<div class="tokenreq_box"><a onclick="return google_wait(true);" href="***tokenurl***" class="button blue ext" id="tokenreq_btn">{L_PROFILE_TOKENREQ}</a></div>
 <div id="token_working"><img id="movespin" src="{V_[templatepath]}images/spinner.gif" width="16" height="16" alt="working" /> {L_PROFILE_TOKENWAIT}</div>

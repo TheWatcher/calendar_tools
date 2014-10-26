@@ -62,7 +62,7 @@ sub _generate_import {
 
         $content = $self -> {"template"} -> load_template("profile/calendars/caltable.tem", {"***callist***" => $callist});
     } else {
-        $content = $self -> {"template"} -> load_template("profile/calendars/token_req.tem", {"***csrf***" => $self -> {"system"} -> {"calendar"} -> get_csrf_token()});
+        $content = $self -> {"template"} -> load_template("profile/calendars/token_req.tem", {"***tokenurl***" => $self -> {"system"} -> {"calendar"} -> get_auth_url()});
     }
 
     return ($self -> {"template"} -> replace_langvar("PROFILE_CALENDARS_TITLE"),
