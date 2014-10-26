@@ -24,3 +24,24 @@
 ***callist***
             </tbody>
         </table>
+<script type="text/javascript">
+    window.addEvent('domready', function() {
+        Locale.use('en-GB');
+
+        $$('input.datepick').each(function(element) {
+                var stampname = element.get('id')+"_ts";
+
+                new Picker.Date(element, { timePicker: false,
+                                           yearPicker: true,
+                                           positionOffset: {x: 5, y: 0},
+                                           pickerClass: 'datepicker_dashboard',
+                                           useFadeInOut: !Browser.ie,
+                                           onSelect: function(date) {
+                                               $(stampname).set('value', date.getTime());
+                                           }
+                                         });
+        });
+
+        new OverText('newcalid', { wrap: true });
+   });
+</script>

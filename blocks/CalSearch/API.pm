@@ -25,6 +25,14 @@ use base qw(CalSearch);
 use v5.12;
 
 
+sub _build_tokencheck_response() {
+    my $self = shift;
+
+    my $token_set = $self -> {"system"} -> {"calendar"} -> user_has_token();
+
+    return { "token" => {"set" => $token_set ? "true" : "false" } };
+}
+
 # ============================================================================
 #  Interface functions
 
@@ -41,6 +49,7 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
+            when("token.check") { return $self -> api_response($self -> _build_tokencheck_response()); }
 
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',

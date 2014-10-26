@@ -31,6 +31,13 @@
     <style type="text/css">
     </style>
     <![endif]-->
+    <script type="text/javascript">
+// <![CDATA[
+        spinner_url = "{V_[templatepath]}images/spinner.gif";
+        basepath = "{V_[scriptpath]}";
+        tempath  = "{V_[templatepath]}";
+// ]]>
+    </script>
 </head>
 <body id="calsearch" class="calsearch">
 <div id="content" class="content clear">
@@ -54,6 +61,10 @@ window.addEvent('domready', function() {
                             zIndex: 8001,
                             pad: 200,
                             width: '800px',
+    });
+
+    $$('a.ext').each(function(element) {
+        element.target = '_blank';
     });
 });
 // ]]>
