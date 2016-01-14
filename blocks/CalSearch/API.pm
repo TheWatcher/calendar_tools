@@ -24,7 +24,24 @@ use experimental 'smartmatch';
 use base qw(CalSearch);
 use v5.12;
 
+## @method private $ _build_tokenauth_response()
+# Generate a hash containing the data to send back in response to a token.auth
+# API request. This API operation is triggered by google as part of the OAuth
+# process - it will contain a `state` variable matching the csrf token for the
+# user requesting a token, and an auth code that can be exchanged to a token.
+# This function locates the user matching the state, and if one is found it
+# exchanges the code for a token string for the user.
+sub _build_tokenauth_response() {
+    my $self = shift;
 
+
+
+}
+
+
+## @method private $ _build_tokencheck_response()
+# Generate a hash contaning the data to send back in response to a token.check
+# API request.
 sub _build_tokencheck_response() {
     my $self = shift;
 
@@ -32,6 +49,7 @@ sub _build_tokencheck_response() {
 
     return { "token" => {"set" => $token_set ? "true" : "false" } };
 }
+
 
 # ============================================================================
 #  Interface functions

@@ -78,7 +78,12 @@ sub new {
 # ==============================================================================
 #  API wrapper
 
-sub get_auth_url() {
+## @method $ get_auth_url()
+# Generate the URL the user should be sent to in order to authorise access to their
+# google calendar.
+#
+# @return A URL to send the user to in order to get an auth code.
+sub get_auth_url {
     my $self = shift;
 
     return $self -> {"agent"} -> authorization_url(redirect_uri    => $self -> {"settings"} -> {"config"} -> {"google:redirect_uri"},
@@ -142,7 +147,7 @@ sub get_user_calendars {
 }
 
 
-## @method private $ _get_csrf_token()
+## @method $ get_csrf_token()
 # Fetch the anti Cross-Site Request Forgery token for the specified user. This
 # will obtain the users CSRF token, creating one if the user does not have one.
 #
@@ -161,6 +166,12 @@ sub get_csrf_token {
     return $csrf;
 }
 
+
+## @method $ get_csrf_userid($csrf)
+# Given a csrf token, attempt to fetch the ID of the user the token belongs to.
+#
+# @param csrf The token to locate an owner for.
+# @return The ID of the user on success, undef on error.
 
 
 # ==============================================================================
