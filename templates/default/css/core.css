@@ -7,7 +7,7 @@
 @import url('inputglow.css');  /* make input boxes glow when active    */
 @import url('controls.css');   /* sprite-based control buttons         */
 
-.calsearch #topbar {
+.events #topbar {
     position: absolute;
     left: 0px;
     top: 0px;
@@ -17,7 +17,7 @@
     background-repeat: repeat-x;
 }
 
-.calsearch #titleblock {
+.events #titleblock {
     line-height: 36px;
     float: left;
     margin-left: 15px;
@@ -28,13 +28,13 @@
     background-position: right center;
 }
 
-.calsearch #topbar ul {
+.events #topbar ul {
     float: right;
     padding: 0px;
     margin: 0px;
 }
 
-.calsearch #topbar ul li {
+.events #topbar ul li {
     line-height: 36px;
     float: left;
     list-style: none;
@@ -45,7 +45,7 @@
     background-position: left center;
 }
 
-.calsearch .footer {
+.events .footer {
     text-align: center;
     width: 50%;
     margin: 0px auto;
@@ -53,7 +53,7 @@
     color: #777;
 }
 
-.calsearch #botbar {
+.events #botbar {
     position: absolute;
     left: 0px;
     bottom: 0px;
@@ -63,14 +63,14 @@
     background-repeat: repeat-x;
 }
 
-.calsearch #botbar ul {
+.events #botbar ul {
     float: right;
     padding: 0px;
     margin: 0px;
     padding-right: 10px;
 }
 
-.calsearch #botbar ul li {
+.events #botbar ul li {
     line-height: 46px;
     float: left;
     list-style: none;
@@ -78,7 +78,7 @@
     padding-right: 5px;
 }
 
-.calsearch #botbar #navblock {
+.events #botbar #navblock {
     position: absolute;
     left: 0px;
     bottom: 0px;
@@ -87,11 +87,11 @@
     text-align: center;
 }
 
-.calsearch #botbar #navblock #navinner {
+.events #botbar #navblock #navinner {
     display: inline-block;
 }
 
-.calsearch #botbar #navblock #navinner #leftbar {
+.events #botbar #navblock #navinner #leftbar {
     float: left;
     width: 5px;
     height: 46px;
@@ -100,7 +100,7 @@
     background-position: left center;
 }
 
-.calsearch #botbar #navblock #navinner #rightbar {
+.events #botbar #navblock #navinner #rightbar {
     float: right;
     width: 5px;
     height: 46px;
@@ -109,45 +109,45 @@
     background-position: right center;
 }
 
-.calsearch #botbar #navblock #navinner #navfloat {
+.events #botbar #navblock #navinner #navfloat {
     float: left;
     margin-top: 6px;
 }
 
-.calsearch #botbar #navblock #navinner #navfloat #navbox {
+.events #botbar #navblock #navinner #navfloat #navbox {
     margin: auto;
     border-collapse: collapse;
 }
 
-.calsearch #botbar #navblock #navinner #navfloat #navbox td {
+.events #botbar #navblock #navinner #navfloat #navbox td {
     padding: 3px 3px;
 }
 
-.calsearch #botbar #navblock #navinner #navfloat #navbox td.navleft {
+.events #botbar #navblock #navinner #navfloat #navbox td.navleft {
     vertical-align: middle;
     text-align: left;
     padding-right: 4px;
 }
 
-.calsearch #botbar #navblock #navinner #navfloat #navbox td.navright {
+.events #botbar #navblock #navinner #navfloat #navbox td.navright {
     vertical-align: middle;
     text-align: right;
     padding-left: 4px;
 }
 
-.calsearch #displaycore {
+.events #displaycore {
     padding-top: 36px;
     padding-bottom: 46px;
     position: relative;
     overflow: hidden;
 }
 
-.calsearch #displaycore div.imageframe {
+.events #displaycore div.imageframe {
     position: absolute;
     border: 1px solid red;
 }
 
-.calsearch #content {
+.events #content {
     margin-top: 40px;
 }
 

@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the CalSearch block base class.
+# This file contains the implementation of the Events block base class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -18,7 +18,7 @@
 
 ## @class
 #
-package CalSearch;
+package Events;
 
 use strict;
 use base qw(Webperl::Block); # Features are just a specific form of Block
@@ -32,12 +32,12 @@ use XML::Simple;
 #  Constructor
 
 ## @cmethod $ new(%args)
-# Overloaded constructor for CalSearch block modules. This will ensure that a valid
+# Overloaded constructor for Events block modules. This will ensure that a valid
 # item id has been stored in the block object data.
 #
 # @param args A hash of values to initialise the object with. See the Block docs
 #             for more information.
-# @return A reference to a new CalSearch object on success, undef on error.
+# @return A reference to a new Events object on success, undef on error.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
@@ -63,7 +63,7 @@ sub new {
 # ============================================================================
 #  HTML generation support
 
-## @method $ generate_calsearch_page($title, $content, $extrahead, $doclink)
+## @method $ generate_events_page($title, $content, $extrahead, $doclink)
 # A convenience function to wrap page content in the standard page template. This
 # function allows blocks to embed their content in a page without having to build
 # the whole page including "common" items themselves. It should be called to wrap
@@ -75,14 +75,14 @@ sub new {
 # @param doclink   The name of a document link to include in the userbar. If not
 #                  supplied, no link is shown.
 # @return A string containing the page.
-sub generate_calsearch_page {
+sub generate_events_page {
     my $self      = shift;
     my $title     = shift;
     my $content   = shift;
     my $extrahead = shift;
     my $doclink   = shift;
 
-    my $userbar = $self -> {"module"} -> load_module("CalSearch::Userbar");
+    my $userbar = $self -> {"module"} -> load_module("Events::Userbar");
 
     return $self -> {"template"} -> load_template("page.tem", {"***extrahead***" => $extrahead || "",
                                                                "***title***"     => $title || "",
@@ -113,7 +113,7 @@ sub generate_errorbox {
                                                     [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                        "colour"  => "blue",
                                                        "action"  => "location.href='{V_[scriptpath]}'"} ]);
-    my $userbar = $self -> {"module"} -> load_module("CalSearch::Userbar");
+    my $userbar = $self -> {"module"} -> load_module("Events::Userbar");
 
     # Build the error page...
     return $self -> {"template"} -> load_template("error/general.tem",
@@ -217,7 +217,7 @@ sub check_login {
                                                            [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                               "colour"  => "blue",
                                                               "action"  => "location.href='{V_[scriptpath]}'"} ]);
-        my $userbar = $self -> {"module"} -> load_module("CalSearch::Userbar");
+        my $userbar = $self -> {"module"} -> load_module("Events::Userbar");
 
         # Build the error page...
         return $self -> {"template"} -> load_template("error/general.tem",

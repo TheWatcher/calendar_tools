@@ -1,5 +1,5 @@
 ## @file
-# This file contains the CalSearch-specific user handling.
+# This file contains the Events-specific user handling.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class
-package CalSearch::AppUser;
+package Events::AppUser;
 
 use strict;
 use base qw(Webperl::AppUser);

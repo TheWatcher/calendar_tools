@@ -18,7 +18,7 @@
 
 ## @class
 # This class encapsulates operations involving events in the system.
-package CalSearch::System::Events;
+package Events::System::Events;
 
 use strict;
 use base qw(Webperl::SystemModule);

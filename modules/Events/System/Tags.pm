@@ -18,7 +18,7 @@
 
 ## @class
 # This class encapsulates operations involving tags in the system.
-package CalSearch::System::Tags;
+package Events::System::Tags;
 
 use strict;
 use base qw(Webperl::SystemModule);

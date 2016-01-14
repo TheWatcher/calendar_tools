@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the CalSearch user toolbar.
+# This file contains the implementation of the Events user toolbar.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class CalSearch::Userbar
+## @class Events::Userbar
 # The Userbar class encapsulates the code required to generate and
 # manage the user toolbar.
-package CalSearch::Userbar;
+package Events::Userbar;
 
 use strict;
-use base qw(CalSearch);
+use base qw(Events);
 use v5.12;
 
 

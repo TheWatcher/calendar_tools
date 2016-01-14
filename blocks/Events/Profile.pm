@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the CalSearch user profile.
+# This file contains the implementation of the Events user profile.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class CalSearch::Profile
-package CalSearch::Profile;
+## @class Events::Profile
+package Events::Profile;
 
 use strict;
-use base qw(CalSearch);
+use base qw(Events);
 use v5.12;
 
 
@@ -86,7 +86,7 @@ sub page_display {
     if(!$self -> check_permission("profile")) {
         $self -> log("error:profile:permission", "User does not have permission to manage their profile");
 
-        my $userbar = $self -> {"module"} -> load_module("CalSearch::Userbar");
+        my $userbar = $self -> {"module"} -> load_module("Events::Userbar");
         my $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
                                                            "error",
                                                            "{L_PERMISSION_FAILED_SUMMARY}",
@@ -132,7 +132,7 @@ sub page_display {
         }
 
         $extrahead .= $self -> {"template"} -> load_template("profile/extrahead.tem");
-        return $self -> generate_calsearch_page($title, $content, $extrahead, "compose");
+        return $self -> generate_events_page($title, $content, $extrahead, "compose");
     }
 }
 

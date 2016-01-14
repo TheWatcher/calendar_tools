@@ -1,5 +1,5 @@
 ## @file
-# This file contains the CalSearch-specific implementation of the runtime
+# This file contains the Events-specific implementation of the runtime
 # block selection class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
@@ -18,11 +18,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class
-# Select the appropriate block to render a page based on an CalSearch URL.
+# Select the appropriate block to render a page based on an Events URL.
 # This allows a url of the form /block/item/path/?args to be parsed into
-# something the CalSearch classes can use to render pages properly, and
+# something the Events classes can use to render pages properly, and
 # select the appropriate block for the current request.
-package CalSearch::BlockSelector;
+package Events::BlockSelector;
 
 use strict;
 use base qw(Webperl::BlockSelector);
@@ -34,7 +34,7 @@ use base qw(Webperl::BlockSelector);
 # Determine which block to use to generate the requested page. This performs
 # the same task as BlockSelector::get_block(), except that it will also parse
 # the contents of the PATH_INFO environment variable into the query string
-# data, allowing CalSearch paths to be passed to the rest of the code without
+# data, allowing Events paths to be passed to the rest of the code without
 # the need to check both the query string and PATH_INFO.
 #
 # After this has been called, the following variables may be set in the cgi

@@ -22,7 +22,7 @@
 # roles and capabilities, as well as assign roles to users, remove those assignments,
 # and define the capabilities of roles.
 #
-package CalSearch::System::Roles;
+package Events::System::Roles;
 
 use strict;
 use base qw(Webperl::SystemModule);

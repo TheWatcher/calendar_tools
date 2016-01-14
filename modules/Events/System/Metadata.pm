@@ -34,7 +34,7 @@
 # Individual things - roles, tags, etc - need to keep track of which metadata
 # context they are attached to, by storing a metadata ID with their data. The
 # metadata context itself does not retain a list of attached 'things'.
-package CalSearch::System::Metadata;
+package Events::System::Metadata;
 
 use strict;
 use base qw(Webperl::SystemModule);

@@ -1,5 +1,5 @@
 ## @file
-# This file contains the CalSearch-specific implementation of the runtime
+# This file contains the Events-specific implementation of the runtime
 # application-specific module loader class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
@@ -19,20 +19,20 @@
 
 ## @class
 # Loads any system-wide application specific modules needed by the
-# CalSearch application.
-package CalSearch::System;
+# Events application.
+package Events::System;
 
 use strict;
 use base qw(Webperl::System);
 
-use CalSearch::System::Metadata;
-use CalSearch::System::Roles;
-use CalSearch::System::Calendar;
+use Events::System::Metadata;
+use Events::System::Roles;
+use Events::System::Calendar;
 
 
 ## @method $ init(%args)
-# Initialise the CalSearch System's references to other system objects. This
-# sets up the CalSearch-specific modules, placing references to them into the
+# Initialise the Events System's references to other system objects. This
+# sets up the Events-specific modules, placing references to them into the
 # object's hash. The argument hash provided must minimally contain the
 # following references:
 #
@@ -54,19 +54,19 @@ sub init {
     $self -> SUPER::init(@_)
         or return undef;
 
-    $self -> {"metadata"} = CalSearch::System::Metadata -> new(dbh      => $self -> {"dbh"},
+    $self -> {"metadata"} = Events::System::Metadata -> new(dbh      => $self -> {"dbh"},
                                                                settings => $self -> {"settings"},
                                                                logger   => $self -> {"logger"})
         or return $self -> self_error("Metadata system init failed: ".$Webperl::SystemModule::errstr);
 
-    $self -> {"roles"} = CalSearch::System::Roles -> new(dbh      => $self -> {"dbh"},
+    $self -> {"roles"} = Events::System::Roles -> new(dbh      => $self -> {"dbh"},
                                                          settings => $self -> {"settings"},
                                                          logger   => $self -> {"logger"},
                                                          metadata => $self -> {"metadata"})
         or return $self -> self_error("Roles system init failed: ".$Webperl::SystemModule::errstr);
 
     # At this point get_session_userid should be safe; Application will have set up the session.
-    $self -> {"calendar"} = CalSearch::System::Calendar -> new(dbh      => $self -> {"dbh"},
+    $self -> {"calendar"} = Events::System::Calendar -> new(dbh      => $self -> {"dbh"},
                                                                settings => $self -> {"settings"},
                                                                logger   => $self -> {"logger"},
                                                                user_id  => $self -> {"session"} -> get_session_userid())

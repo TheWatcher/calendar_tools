@@ -17,7 +17,7 @@
 
 ## @class
 # This class encapsulates operations involving calendars in the system.
-package CalSearch::System::Calendar;
+package Events::System::Calendar;
 
 use strict;
 use base qw(Webperl::SystemModule);

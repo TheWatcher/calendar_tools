@@ -20,10 +20,10 @@
 # A 'stand alone' login implementation. This presents the user with a
 # login form, checks the credentials they enter, and then redirects
 # them back to the task they were performing that required a login.
-package CalSearch::Login;
+package Events::Login;
 
 use strict;
-use base qw(CalSearch); # This class extends the CalSearch block class
+use base qw(Events); # This class extends the Events block class
 use Webperl::Utils qw(path_join is_defined_numeric);
 use v5.12;
 

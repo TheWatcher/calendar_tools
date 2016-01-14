@@ -17,11 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class
-package CalSearch::API;
+package Events::API;
 
 use strict;
 use experimental 'smartmatch';
-use base qw(CalSearch);
+use base qw(Events);
 use v5.12;
 
 ## @method private $ _build_tokenauth_response()
@@ -75,7 +75,7 @@ sub page_display {
             }
         }
     } else {
-        my $userbar = $self -> {"module"} -> load_module("CalSearch::Userbar");
+        my $userbar = $self -> {"module"} -> load_module("Events::Userbar");
         my $message = $self -> {"template"} -> message_box("{L_APIDIRECT_FAILED_TITLE}",
                                                            "error",
                                                            "{L_APIDIRECT_FAILED_SUMMARY}",

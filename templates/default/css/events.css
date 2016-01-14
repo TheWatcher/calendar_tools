@@ -1,16 +1,16 @@
-#calsearch-core {
+#events-core {
     padding-top: 40px;
     margin: 0px auto;
     width: 1000px;
 }
 
-#calsearch-core > ul {
+#events-core > ul {
     float: left;
     margin: 0px;
     padding: 0px;
 }
 
-#calsearch-core > ul > li {
+#events-core > ul > li {
     list-style-type: none;
     margin: 0px 0px 10px 0px;
     overflow: hidden;
