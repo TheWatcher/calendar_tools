@@ -245,7 +245,7 @@ sub check_login {
 sub is_api_operation {
     my $self = shift;
 
-    my @api = $self -> {"cgi"} -> param('api');
+    my @api = $self -> {"cgi"} -> multi_param('api');
 
     # No api means no API mode.
     return undef unless(scalar(@api));
@@ -379,11 +379,11 @@ sub set_saved_state {
     my $res = $self -> {"session"} -> set_variable("saved_block", $self -> {"cgi"} -> param("block"));
     return undef unless(defined($res));
 
-    my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
+    my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
     $res = $self -> {"session"} -> set_variable("saved_pathinfo", join("/", @pathinfo));
     return undef unless(defined($res));
 
-    my @api = $self -> {"cgi"} -> param("api");
+    my @api = $self -> {"cgi"} -> multi_param("api");
     $res = $self -> {"session"} -> set_variable("saved_api", join("/", @api));
     return undef unless(defined($res));
 
@@ -393,7 +393,7 @@ sub set_saved_state {
     foreach my $name (@names) {
         next if($name eq "block" || $name eq "pathinfo" || $name eq "api");
 
-        my @vals = $self -> {"cgi"} -> param($name);
+        my @vals = $self -> {"cgi"} -> multi_param($name);
         foreach my $val (@vals) {
             push(@qstring, escape($name)."=".escape($val));
         }
@@ -556,12 +556,12 @@ sub build_url {
         if(!defined($args{"block"}));
 
     if(!defined($args{"pathinfo"})) {
-        my @cgipath = $self -> {"cgi"} -> param("pathinfo");
+        my @cgipath = $self -> {"cgi"} -> multi_param("pathinfo");
         $args{"pathinfo"} = \@cgipath if(scalar(@cgipath));
     }
 
     if(!defined($args{"api"})) {
-        my @cgiapi = $self -> {"cgi"} -> param("api");
+        my @cgiapi = $self -> {"cgi"} -> multi_param("api");
         $args{"api"} = \@cgiapi if(scalar(@cgiapi));
     }
 
