@@ -43,8 +43,10 @@ sub handle_errors {
 }
 set_message(\&handle_errors);
 
-my $app = Webperl::Application -> new(appuser        => CalSearch::AppUser -> new(),
+do {
+    my $app = Webperl::Application -> new(appuser        => CalSearch::AppUser -> new(),
                                       system         => CalSearch::System -> new(),
                                       block_selector => CalSearch::BlockSelector -> new())
-    or die "Unable to create application";
-$app -> run();
+        or die "Unable to create application";
+    $app -> run();
+}
