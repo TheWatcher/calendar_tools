@@ -1,0 +1,10 @@
+<script type="text/javascript">
+    spinner_imgurl   = '{V_[templatepath]}images/spinner.gif';
+</script>
+<div id="eventform" class="shadowbox">
+    <h2>{L_EVENTS_NEWEVENT_TITLE}</h2>
+    <div class="sbcontent">
+
+
+    </div>
+</div>

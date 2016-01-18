@@ -1,0 +1,18 @@
+<script type="text/javascript">
+    spinner_imgurl   = '{V_[templatepath]}images/spinner.gif';
+</script>
+<div id="eventform" class="shadowbox">
+    <h2>{L_EVENTS_NEWEVENT_TITLE}</h2>
+    <div class="sbcontent">
+        <div id="evformcore">
+            <dl class="input" id="event-title-box">
+                <dt><label for="event-title" class="required">{L_EVENT_TITLE}</label></dt>
+                <dd><input class="fillwide" type="text" name="event-title" id="event-title" size="80" maxlength="80" title="{L_EVENT_TITLE}" value="***event-title***" /></dd>
+            </dl>
+
+        </div>
+        <div id="dynhelp">
+
+        </div>
+    </div>
+</div>
